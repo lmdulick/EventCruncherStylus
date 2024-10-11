@@ -33,8 +33,8 @@ npm install multer --save
 ```shell
 npm install react-router-dom
 ```
-
-# Frontend: 'client'
+# How-To Run the Application
+## Frontend: 'client'
 
 To run the client (Frontend):
 ```shell
@@ -44,7 +44,7 @@ cd client
 npm start
 ```
 
-# Backend: 'server'
+## Backend: 'server'
 
 To run the server (Backend):
 ```shell
