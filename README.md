@@ -34,6 +34,26 @@ npm install multer --save
 npm install react-router-dom
 ```
 
+# Frontend: 'client'
+
+To run the client (Frontend):
+```shell
+cd client
+```
+```shell
+npm start
+```
+
+# Backend: 'server'
+
+To run the server (Backend):
+```shell
+cd server
+```
+```shell
+npm run dev
+```
+
 # ECS Levels
 ## Binary Level
 <img width="895" alt="image" src="https://github.com/user-attachments/assets/42c3d9d7-851b-4d96-85d6-65752061046c">
