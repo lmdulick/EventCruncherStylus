@@ -9,7 +9,7 @@ ECS PPTX:
 # Authors
 - Professor Willard R Hasty, History
 - Professor Mark E Law, Electrical Engineering
-- Mr. Daniel Maxwell, Informatics Librarian
+- Mr. Daniel Maxwell, Research Computing
 - Lauren Dulick, University Research Scholar (Computer Science and Engineering)
 
 # Necessary Installations
