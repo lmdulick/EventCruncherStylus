@@ -1,0 +1,75 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #ffffff;
+  color: #ffffff;
+}
+
+.home-container {
+  text-align: center;
+  padding-top: 5vh;
+}
+
+.home-logo {
+    max-width: 300px; /* Set maximum width */
+    width: 100%; /* Make it responsive */
+    height: auto; /* Maintain aspect ratio */
+    display: block;
+    margin: 0 auto; /* Center horizontally */
+  }
+  
+
+.navigation-buttons {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.navigation-button {
+  background-color: #ff6800;
+  color: #ffffff;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 5px;
+  font-size: 1.25rem;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.3s ease-in-out;
+}
+
+.navigation-button:hover, .navigation-button:focus {
+  background-color: #ff5a00;
+}
+
+/* Utility classes for the footer and other elements */
+.text-light {
+  color: #ffffff;
+}
+
+.bg-dark {
+  background-color: #002460;
+}
+
+.bg-blue {
+  background-color: #00a5fb;
+}
+
+.bg-dark-orange {
+  background-color: #ff5a00;
+}
+
+.footer {
+  padding: 1rem;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .navigation-buttons {
+    flex-direction: column;
+  }
+}
