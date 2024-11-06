@@ -53,6 +53,28 @@ cd server
 npm run dev
 ```
 
+## MySQL Commands
+
+```shell
+cd C:\Program Files\MySQL\MySQL Server 9.1\bin
+```
+
+```shell
+mysql -u root -p
+```
+
+```shell
+USE profilesdb;
+```
+
+```shell
+SHOW TABLES;
+```
+
+```shell
+EXIT;
+```
+
 # ECS Levels
 ## Binary Level
 <img width="895" alt="image" src="https://github.com/user-attachments/assets/42c3d9d7-851b-4d96-85d6-65752061046c">
