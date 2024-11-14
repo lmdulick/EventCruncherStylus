@@ -1,0 +1,19 @@
+/* CubicLevel.css */
+
+.cubic-level-container {
+    width: 100vw;
+    height: calc(100vh - 50px);
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    background-color: #fafafa;
+}
+
+.cubic-level-title {
+    text-align: center;
+    font-size: 48px;
+    font-weight: bold;
+    margin: 0;
+    padding: 10px 0;
+    color: #000000;
+}

@@ -32,6 +32,9 @@ npm install multer --save
 ```shell
 npm install react-router-dom
 ```
+```shell
+npm install three troika-three-text
+```
 # How-To Run the Application
 ## Frontend: 'client'
 

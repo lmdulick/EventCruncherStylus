@@ -70,34 +70,28 @@ function CreateAccount() {
       setPasswordError('Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character');
       return; // Stop form submission if password is invalid
     }
+
+    try {
+      const response = await fetch('http://localhost:4000/api/users', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ firstName, lastName, email, username, password })
+      });
+
+      if (response.ok) {
+          const data = await response.json();
+          console.log('Account created successfully:', data);
+          navigate('/'); // Redirect to home page or login after account creation
+      } else {
+          const errorData = await response.json();
+          console.error('Error creating account:', errorData.error);
+      }
+  } catch (error) {
+      console.error('Error submitting form:', error);
   }
-  
-//     try {
-//       const response = await fetch('http://localhost:4000/api/profile', {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json'
-//         },
-//         body: JSON.stringify({
-//           firstName,
-//           lastName,
-//           email,
-//           username,
-//           password
-//         })
-//       });
-  
-//       if (response.ok) {
-//         console.log("Account created successfully");
-//         navigate("/main-page", {state : {username}});
-//       } else {
-//         console.error("Failed to create account");
-//       }
-//     } catch (error) {
-//       console.error('Error creating account:', error);
-//     }
-//     //console.log(firstName, lastName, email, username, password, confirmPassword);
-//   };
+};
 
   useEffect(() => {
     makeAPICall();
