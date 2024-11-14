@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three'; // utilizing three.js library
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'; // for mouse control of the 
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'; // for rotation functionality and mouse control
 import './CubicLevel.css';
 
 const CubicLevel = () => {
