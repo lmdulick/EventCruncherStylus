@@ -34,7 +34,7 @@ const CubicLevel = () => {
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setClearColor(0xffffff); // White background
+    renderer.setClearColor(0xffffff);
     container.appendChild(renderer.domElement);
 
     // Ambient Light
@@ -47,22 +47,22 @@ const CubicLevel = () => {
 
     const materials = [
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/whenB.jpg"), // When face !
+        map: textureLoader.load("/images/whenB.jpg"), // WHEN face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/whereB.jpg"), // Where face !
+        map: textureLoader.load("/images/whereB.jpg"), // WHERE face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/whyB.jpg"), // Why face !
+        map: textureLoader.load("/images/whyB.jpg"), // WHY face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/howB.jpg"), // How face !
+        map: textureLoader.load("/images/howB.jpg"), // HOW face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/whoB.jpg"), // Who face !
+        map: textureLoader.load("/images/whoB.jpg"), // WHO face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/whatB.jpg"), // What face !
+        map: textureLoader.load("/images/whatB.jpg"), // WHAT face
       }),
     ];
 
@@ -78,6 +78,8 @@ const CubicLevel = () => {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
+
+    // Method for handling a mouse click on the cube
     const handleMouseClick = (event) => {
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -87,14 +89,13 @@ const CubicLevel = () => {
       const intersects = raycaster.intersectObject(cube);
     
       if (intersects.length > 0) {
-        // Correct face mapping for labels
         const faceMap = [3, 2, 4, 5, 0, 1];
-        // Who: 0 -p5
-        // What: 1 -p6
-        // When: 3 -p1
-        // Where: 2 - p2
-        // Why: 4 -p3
-        // How: 5 -p4
+        // [0] : When (val: 3)
+        // [1] : Where (val: 2)
+        // [2] : Why (val: 4)
+        // [3] : How (val: 5)
+        // [4] : Who (val: 0)
+        // [5] : What (val: 1)
 
         const triangleIndex = Math.floor(intersects[0].faceIndex / 2);
         const faceIndex = faceMap[triangleIndex];
@@ -107,7 +108,6 @@ const CubicLevel = () => {
       }
     };
     
-
     renderer.domElement.addEventListener("click", handleMouseClick);
 
     const animate = () => {
@@ -133,18 +133,21 @@ const CubicLevel = () => {
     };
   }, [faceTexts]);
 
+
+  // Method for handling saving data when user clicks "SAVE" button
   const handleSave = () => {
     const faceLabels = ["Who", "What", "Where", "When", "Why", "How"];
   
     // Update the current face content
     const updatedFaceTexts = {
       ...faceTexts,
-      [selectedFaceIndex]: inputText, // Save the current face text
+      [selectedFaceIndex]: inputText,
     };
   
-    setFaceTexts(updatedFaceTexts); // Update text state
+    setFaceTexts(updatedFaceTexts);
   
     console.log("-----------------------------");
+
     // Check if a new file was added to the face
     const currentFiles = faceFiles[selectedFaceIndex] || [];
     if (currentFiles.length > 0) {
@@ -152,20 +155,22 @@ const CubicLevel = () => {
       console.log(currentFiles.map((file) => file.name));
     }
 
-    //console.log("-----------------------------");
     faceLabels.forEach((label, index) => {
       const faceText = updatedFaceTexts[index] || "";
       const files = faceFiles[index]?.map((file) => file.name).join(", ") || "";
       console.log(`${label}: [${faceText}] ${files ? `Files: ${files}` : ""}`);
     });
+
     console.log("-----------------------------");
   
-    setSelectedFaceIndex(null); // Clear selection
-    setInputText(""); // Clear input text
+    setSelectedFaceIndex(null);
+    setInputText("");
   };
   
+
+  // Method for handling uploading a file when user clicks "INSERT FILE" button
   const handleFileUpload = (event) => {
-    const files = Array.from(event.target.files); // Convert file list to array
+    const files = Array.from(event.target.files);
     if (files.length > 0 && selectedFaceIndex !== null) {
       setFaceFiles((prev) => {
         const updatedFiles = [...prev[selectedFaceIndex], ...files]; // Append new files
@@ -178,6 +183,7 @@ const CubicLevel = () => {
   };
   
   
+  // Method for handling when a user clicks "X" button and deletes an uploaded file
   const handleDeleteFile = (faceIndex, fileIndex) => {
     setFaceFiles((prev) => {
       const updatedFiles = prev[faceIndex].filter((_, i) => i !== fileIndex); // Remove the file at fileIndex
@@ -189,6 +195,7 @@ const CubicLevel = () => {
   };
   
   
+  // Method for formatting the text box's text & bullet points
   const formatText = (command) => {
     const textarea = document.getElementById("text-area");
     const start = textarea.selectionStart;
@@ -198,23 +205,19 @@ const CubicLevel = () => {
     const textAfterCursor = inputText.substring(end);
     const currentLine = textBeforeCursor.split("\n").pop();
   
-    const lines = inputText.split("\n"); // Split input text into lines
-    const lineIndex = lines.length - 1; // Get the current line index
+    const lines = inputText.split("\n");
+    const lineIndex = lines.length - 1;
     let newText = inputText;
   
     switch (command) {
       case "bullet":
-        // Check if the current line starts with a bullet
         if (currentLine.startsWith("•")) {
-          // Remove bullet if it exists
           lines[lineIndex] = currentLine.substring(2);
         } else {
-          // Add bullet point
           lines[lineIndex] = `• ${currentLine.trim()}`;
         }
         newText = lines.join("\n");
         break;
-      // Add other formatting options here if needed
       default:
         break;
     }
@@ -222,6 +225,8 @@ const CubicLevel = () => {
     setInputText(newText);
   };
  
+
+  // Method for auto adding bullet points
   const handleKeyDown = (event) => {
     const textarea = event.target;
   
@@ -238,7 +243,7 @@ const CubicLevel = () => {
         // Add a new bullet line
         newText = `${textBeforeCursor}\n• ${textAfterCursor}`;
       } else {
-        // Plain new line
+        // Add a plain new line
         newText = `${textBeforeCursor}\n${textAfterCursor}`;
       }
   
@@ -288,8 +293,6 @@ const CubicLevel = () => {
           </div>
         </div>
 
-
-      
         {/* Bullet Button */}
         <button
           className="bullet-button"
@@ -302,7 +305,7 @@ const CubicLevel = () => {
         />
         </button>
 
-        {/* Buttons */}
+        {/* Insert Files / Save Buttons */}
         <div className="button-container">
           <label className="upload-button">
             <input
