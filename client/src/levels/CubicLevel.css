@@ -1,3 +1,4 @@
+/* DEFAULT FORMATTING */
 * {
   margin: 0;
   padding: 0;
@@ -8,14 +9,14 @@
 html, body {
   height: 100%;
   overflow: hidden;
-  background-color: #ffffff; /* Set a solid background to match */
+  background-color: #ffffff;
 }
 
 
-/* CUBIC FORMATTING */
+/* CUBE FORMATTING */
 .cubic-level {
   display: flex;
-  height: 100vh; /* Full height */
+  height: 100vh;
   margin: 0;
 }
 
@@ -23,19 +24,19 @@ html, body {
   position: absolute;
   left: 0;
   top: 0;
-  width: 50%; /* Left half of the screen */
+  width: 50%;
   height: 100vh;
   overflow: hidden;
 }
 
 .cubic-level-title {
-  text-align: center; /* Center the text horizontally */
-  font-size: 2rem; /* Adjust font size */
+  text-align: center;
+  font-size: 2rem;
   margin: 0;
-  padding: 20px 0; /* Add spacing on top and bottom */
-  width: 100%; /* Ensure it spans the full width */
-  position: absolute; /* Ensures it's positioned at the top */
-  top: 0; /* Align to the top of the viewport */
+  padding: 20px 0;
+  width: 100%;
+  position: absolute;
+  top: 0;
   left: 0;
 }
 
@@ -55,18 +56,18 @@ html, body {
   top: 50%;
   transform: translateY(-50%);
   background: white;
-  box-shadow: none; /* Remove shadow */
+  box-shadow: none;
   border: none;
 }
 
 .text-input-overlay textarea {
   width: 100%;
-  height: 500px; /* Increase the height as needed */
+  height: 500px;
   margin-bottom: 8px;
   padding: 16px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  resize: none; /* Disable manual resizing */
+  resize: none;
   font-size: 1 rem;
   line-height: 1.5;
 }
@@ -87,204 +88,85 @@ html, body {
 }
 
 
-/* BUTTON CONTAINER */
-/* .button-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-  width: 100%;
-} */
-
-
-/* BULLET BUTTON */
-/* .bullet-button {
-  background-color: #ffffff;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 5px;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  width: 30px;
-  height: 30px;
-  /* position: relative;
-  top: 5px;
-  left: 5px; */
-/*}
-
-.bullet-button:hover {
-  background-color: #f9f9f9;
-  border-color: #bbb;
-  box-shadow: 0 10px 12px rgba(0, 0, 0, 0.2);
-} */
-
-.bullet-image {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-}
-
-
-/* UPLOAD BUTTON */
-/* .upload-button {
-  background-color: #ff9800;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  text-align: center;
-  font-size: 1rem;
-  font-weight: bold;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  top: -29px;
-  right: 130px;
-}
-
-.upload-button:hover {
-  background-color: #e68900;
-} */
-
-
-/* SAVE BUTTON */
-/* .save-button {
-  background-color: #007bff;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: bold;
-  /* justify-content: center;
-  position: relative;
-  top: -29px;
-  right: -190px; */
-/*} */
-
-/* .save-button:hover {
-  background-color: #0056b3;
-} */
-
-
-/* FILE LIST */
-.file-list {
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.file-item {
-  display: flex;
-  align-items: center;
-  background-color: #f8f9fa;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 5px 10px;
-  font-size: 0.9rem;
-  color: #333;
-}
-
-.remove-file-button {
-  background: none;
-  border: none;
-  color: #ff0000;
-  font-size: 1rem;
-  margin-right: 8px;
-  cursor: pointer;
-}
-
-.remove-file-button:hover {
-  color: #cc0000;
-}
-
-.file-item span {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Container to position file list at the bottom */
+/* TEXT INPUT AREA */
 .text-area-container {
   position: relative;
   width: 100%;
-  height: 500px; /* Match the text area height */
+  height: 500px;
 }
 
 .text-area-container textarea {
   width: 100%;
   height: 100%;
-  padding-bottom: 40px; /* Leave space for file display */
+  padding-bottom: 40px;
   box-sizing: border-box;
   resize: none;
 }
 
-/* Container for file list */
-.file-list-inside {
+
+/* FILE LIST */
+.file-list {
   position: absolute;
   bottom: 5px;
   left: 10px;
   right: 10px;
   display: flex;
-  flex-direction: column; /* Stack items vertically */
-  gap: 5px; /* Add spacing between each file */
-  align-items: flex-start; /* Align files to the left */
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-start;
 }
 
-/* Style for each file entry */
-.file-item-inside {
+.file-item {
   display: flex;
   align-items: center;
-  width: 100%; /* Full width to match text box */
+  width: 100%;
   background-color: #f8f9fa;
   border: 1px solid #ccc;
   border-radius: 4px;
-  padding: 3px 8px;
-  font-size: 0.8rem;
-  color: #333;
+  padding: 5px 8px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* Remove button (X) style */
-.remove-file-button-inside {
-  background: none;
-  border: none;
-  color: #ff0000;
-  font-size: 1rem;
-  margin-right: 5px;
-  cursor: pointer;
-}
-
-.remove-file-button-inside:hover {
-  color: #cc0000;
-}
-
-.file-item-inside span {
-  flex-grow: 1; /* Ensures file name takes up remaining space */
+.file-item span {
+  flex: 1;
+  color: #000000;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-left: 10px;
+}
+
+.delete-file-button {
+  background: #ff0000 !important;
+  color: #ffffff !important;
+  border: none;
+  font-size: 1rem;
+  border-radius: 4px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.delete-file-button:hover {
+  background: #cc0000 !important;
 }
 
 
-
-/* Container for Buttons */
+/* CONTAINER FOR BUTTONS */
 .button-container {
   display: flex;
-  align-items: flex-end; /* Align buttons to bottom */
-  justify-content: space-between; /* Spread items */
+  align-items: flex-end;
+  justify-content: space-between;
   width: 100%;
-  margin-top: 10px; /* Add space below text box */
 }
 
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+
+/* BULLET POINT BUTTON */
 .bullet-button {
   background-color: #ffffff;
   border: 1px solid #ccc;
@@ -297,8 +179,9 @@ html, body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   width: 30px;
   height: 30px;
+
   position: relative;
-  top: 75px;
+  top: 35px;
   left: 5px;
 }
 
@@ -308,38 +191,45 @@ html, body {
   box-shadow: 0 10px 12px rgba(0, 0, 0, 0.2);
 }
 
-.action-buttons {
-  display: flex;
-  gap: 10px; /* Space between buttons */
-  margin-left: auto; /* Push buttons to the right */
+.bullet-image {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
 }
 
+
+/* UPLOAD (INSERT FILES) BUTTON */
 .upload-button {
-  background-color: #ff9800; /* Orange */
+  background-color: #ff9800;
   color: white;
+  font-size: 1rem;
+  font-weight: bold;
   border: none;
   padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
   text-align: center;
+
   position: relative;
-  top: 30px;
   left: 50px;
 }
 
 .upload-button:hover {
-  background-color: #e68900; /* Darker orange */
+  background-color: #e68900;
 }
 
+
+/* SAVE BUTTON */
 .save-button {
-  background-color: #007bff; /* Blue */
+  background-color: #007bff;
   color: white;
+  font-size: 1rem;
+  font-weight: bold;
   border: none;
   padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
-  position: relative;
-  top: 27px;
+  text-align: center;
 }
 
 .save-button:hover {

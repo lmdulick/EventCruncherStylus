@@ -271,22 +271,23 @@ const CubicLevel = () => {
             onKeyDown={handleKeyDown}
             placeholder="Type here..."
           ></textarea>
-      
-        {/* Display Uploaded Files */}
-        <div className="file-list">
-              {faceFiles[selectedFaceIndex]?.map((file, index) => (
-                <div key={index} className="file-item">
-                  <button
-                    className="delete-file-button"
-                    onClick={() => handleDeleteFile(selectedFaceIndex, index)}
-                  >
-                    X
-                  </button>
-                  {file.name}
-                </div>
-              ))}
-            </div>
+
+          {/* File List Textarea */}
+          <div className="file-list">
+            {faceFiles[selectedFaceIndex]?.map((file, index) => (
+              <div key={index} className="file-item">
+                <button
+                  className="delete-file-button"
+                  onClick={() => handleDeleteFile(selectedFaceIndex, index)}
+                >
+                  X
+                </button>
+                <span>{file.name}</span>
+              </div>
+            ))}
           </div>
+        </div>
+
 
       
         {/* Bullet Button */}
