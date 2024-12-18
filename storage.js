@@ -10,15 +10,6 @@ const CubicLevel = () => {
   const [selectedFaceIndex, setSelectedFaceIndex] = useState(null);
   const [faceTexts, setFaceTexts] = useState({});
   const [inputText, setInputText] = useState("");
-  const [faceFiles, setFaceFiles] = useState({
-    0: [], // Who
-    1: [], // What
-    2: [], // Where
-    3: [], // When
-    4: [], // Why
-    5: [], // How
-  });
-  
 
   useEffect(() => {
     // Initialize Scene, Camera, Renderer
@@ -64,7 +55,7 @@ const CubicLevel = () => {
       new THREE.MeshBasicMaterial({
         map: textureLoader.load("/images/whatB.jpg"), // What face !
       }),
-    ];
+    ];    
 
     const cube = new THREE.Mesh(geometry, materials);
     scene.add(cube);
@@ -101,13 +92,42 @@ const CubicLevel = () => {
     
         console.log("Triangle Index:", triangleIndex);
         console.log("Mapped Face Index:", faceIndex);
-    
+
+        // Original and clicked images for the faces
+        const originalImages = [
+          textureLoader.load("/images/whenB.jpg"),   // When face original
+          textureLoader.load("/images/whereB.jpg"),  // Where face original
+          textureLoader.load("/images/whyB.jpg"),    // Why face original
+          textureLoader.load("/images/howB.jpg"),    // How face original
+          textureLoader.load("/images/whoB.jpg"),    // Who face original
+          textureLoader.load("/images/whatB.jpg"),   // What face original
+        ];
+
+        const clickedImages = [
+          textureLoader.load("/images/whenR.jpg"),   // When face clicked
+          textureLoader.load("/images/whereR.jpg"),  // Where face clicked
+          textureLoader.load("/images/whyR.jpg"),    // Why face clicked
+          textureLoader.load("/images/howR.jpg"),    // How face clicked
+          textureLoader.load("/images/whoR.jpg"),    // Who face clicked
+          textureLoader.load("/images/whatR.jpg"),   // What face clicked
+        ];
+
+        // Reset all faces to their original textures
+        for (let i = 0; i < cube.material.length; i++) {
+          cube.material[i].map = originalImages[i];
+          cube.material[i].needsUpdate = true;
+        }
+
+        // Change only the clicked face to the highlighted texture
+        cube.material[faceIndex].map = clickedImages[faceIndex];
+        cube.material[faceIndex].needsUpdate = true;
+
+        // Update the state
         setSelectedFaceIndex(faceIndex);
         setInputText(faceTexts[faceIndex] || "");
       }
     };
     
-
     renderer.domElement.addEventListener("click", handleMouseClick);
 
     const animate = () => {
@@ -139,56 +159,32 @@ const CubicLevel = () => {
     // Update the current face content
     const updatedFaceTexts = {
       ...faceTexts,
-      [selectedFaceIndex]: inputText, // Save the current face text
+      [selectedFaceIndex]: inputText,
     };
   
-    setFaceTexts(updatedFaceTexts); // Update text state
+    // Generate and print the cube's contents
+    const output = faceLabels
+      .map((label, index) => `${label}: [${updatedFaceTexts[index] || ""}]`)
+      .join("\n");
   
-    console.log("-----------------------------");
-    // Check if a new file was added to the face
-    const currentFiles = faceFiles[selectedFaceIndex] || [];
-    if (currentFiles.length > 0) {
-      console.log(`Files successfully added to face "${faceLabels[selectedFaceIndex]}":`);
-      console.log(currentFiles.map((file) => file.name));
-    }
+    console.log(output); // Print to terminal
+  
+    // Update state after logging
+    setFaceTexts(updatedFaceTexts);
+    setSelectedFaceIndex(null);
+  };
 
-    //console.log("-----------------------------");
-    faceLabels.forEach((label, index) => {
-      const faceText = updatedFaceTexts[index] || "";
-      const files = faceFiles[index]?.map((file) => file.name).join(", ") || "";
-      console.log(`${label}: [${faceText}] ${files ? `Files: ${files}` : ""}`);
-    });
-    console.log("-----------------------------");
-  
-    setSelectedFaceIndex(null); // Clear selection
-    setInputText(""); // Clear input text
-  };
-  
   const handleFileUpload = (event) => {
-    const files = Array.from(event.target.files); // Convert file list to array
-    if (files.length > 0 && selectedFaceIndex !== null) {
-      setFaceFiles((prev) => {
-        const updatedFiles = [...prev[selectedFaceIndex], ...files]; // Append new files
-        return {
-          ...prev,
-          [selectedFaceIndex]: updatedFiles, // Update the specific face
-        };
-      });
+    const files = event.target.files; // Access uploaded files
+    if (files.length > 0) {
+      console.log("Uploaded Files:");
+      for (let i = 0; i < files.length; i++) {
+        console.log(`File ${i + 1}:`, files[i].name);
+      }
+      alert(`${files.length} file(s) uploaded successfully!`);
     }
   };
-  
-  
-  const handleDeleteFile = (faceIndex, fileIndex) => {
-    setFaceFiles((prev) => {
-      const updatedFiles = prev[faceIndex].filter((_, i) => i !== fileIndex); // Remove the file at fileIndex
-      return {
-        ...prev,
-        [faceIndex]: updatedFiles, // Update only the selected face's files
-      };
-    });
-  };
-  
-  
+
   const formatText = (command) => {
     const textarea = document.getElementById("text-area");
     const start = textarea.selectionStart;
@@ -263,64 +259,43 @@ const CubicLevel = () => {
         <h2 className="face-label">{labels[selectedFaceIndex]}</h2>
       
         {/* Text Input Area */}
-        <div className="text-area-container">
-          <textarea
-            id="text-area"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type here..."
-          ></textarea>
-      
-        {/* Display Uploaded Files */}
-        <div className="file-list">
-              {faceFiles[selectedFaceIndex]?.map((file, index) => (
-                <div key={index} className="file-item">
-                  <button
-                    className="delete-file-button"
-                    onClick={() => handleDeleteFile(selectedFaceIndex, index)}
-                  >
-                    X
-                  </button>
-                  {file.name}
-                </div>
-              ))}
-            </div>
-          </div>
-
+        <textarea
+          id="text-area"
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Type here..."
+        ></textarea>
       
         {/* Bullet Button */}
         <button
           className="bullet-button"
           onClick={() => formatText("bullet")}
         >
-        <img
-          src="/images/bulletpoint.jpg"
-          alt="Bullet Point"
-          className="bullet-image"
-        />
+          <img
+            src="/images/bulletpoint.jpg"
+            alt="Bullet Point"
+            className="bullet-image"
+          />
         </button>
 
-        {/* Buttons */}
-        <div className="button-container">
-          <label className="upload-button">
-            <input
-              type="file"
-              onChange={handleFileUpload}
-              style={{ display: "none" }}
-              multiple
-            />
-            INSERT FILES
-          </label>
-          <button onClick={handleSave} className="save-button">
-            SAVE
-          </button>
-        </div>
-      </div>      
+        {/* Upload Files and Save Buttons */}
+        <label className="upload-button">
+          <input
+            type="file"
+            onChange={handleFileUpload}
+            style={{ display: "none" }}
+            multiple
+          />
+          UPLOAD FILES
+        </label>
+        <button onClick={handleSave} className="save-button">
+          SAVE
+        </button>
+      </div>
       )}
     </div>
   );  
 };
 
 export default CubicLevel;
-
