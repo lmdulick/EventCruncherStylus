@@ -1,4 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
+import * as XLSX from "xlsx";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import "./CubicLevel.css";
@@ -18,6 +21,10 @@ const CubicLevel = () => {
     4: [], // Why
     5: [], // How
   });
+
+  // Add this at the top of your component
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [spreadsheetData, setSpreadsheetData] = useState([]);
   
 
   useEffect(() => {
@@ -45,24 +52,25 @@ const CubicLevel = () => {
     const geometry = new THREE.BoxGeometry(3, 3, 3);
     const textureLoader = new THREE.TextureLoader();
 
+    // Render Cube Faces
     const materials = [
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/whenB.jpg"), // WHEN face
+        map: textureLoader.load("/images/cube_faces/whenBB.jpg"), // WHEN face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/whereB.jpg"), // WHERE face
+        map: textureLoader.load("/images/cube_faces/whereBB.jpg"), // WHERE face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/whyB.jpg"), // WHY face
+        map: textureLoader.load("/images/cube_faces/whyBB.jpg"), // WHY face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/howB.jpg"), // HOW face
+        map: textureLoader.load("/images/cube_faces/howBB.jpg"), // HOW face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/whoB.jpg"), // WHO face
+        map: textureLoader.load("/images/cube_faces/whoBB.jpg"), // WHO face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/whatB.jpg"), // WHAT face
+        map: textureLoader.load("/images/cube_faces/whatBB.jpg"), // WHAT face
       }),
     ];
 
@@ -171,6 +179,7 @@ const CubicLevel = () => {
   // Method for handling uploading a file when user clicks "INSERT FILE" button
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
+  
     if (files.length > 0 && selectedFaceIndex !== null) {
       setFaceFiles((prev) => {
         const updatedFiles = [...prev[selectedFaceIndex], ...files]; // Append new files
@@ -179,6 +188,10 @@ const CubicLevel = () => {
           [selectedFaceIndex]: updatedFiles, // Update the specific face
         };
       });
+  
+      // Add file names as bullet points to the text box
+      const newFileNames = files.map((file) => `• ${file.name}`).join("");
+      setInputText((prevText) => `${prevText}${prevText ? "\n" : ""}${newFileNames}`);
     }
   };
   
@@ -187,6 +200,20 @@ const CubicLevel = () => {
   const handleDeleteFile = (faceIndex, fileIndex) => {
     setFaceFiles((prev) => {
       const updatedFiles = prev[faceIndex].filter((_, i) => i !== fileIndex); // Remove the file at fileIndex
+  
+      // Update the text box to remove the bullet point for the deleted file
+      if (faceIndex === selectedFaceIndex) {
+        const fileNameToRemove = prev[faceIndex][fileIndex].name;
+        setInputText((prevText) => {
+          // Remove the bullet point corresponding to the deleted file
+          const updatedText = prevText
+            .split("\n")
+            .filter((line) => line.trim() !== `• ${fileNameToRemove}`)
+            .join("\n");
+          return updatedText;
+        });
+      }
+  
       return {
         ...prev,
         [faceIndex]: updatedFiles, // Update only the selected face's files
@@ -255,6 +282,70 @@ const CubicLevel = () => {
       }, 0);
     }
   };
+
+  
+  // Method for viewing the cube data in a spreadsheet (xslx) format
+  const handleXLSXClick = () => {
+    const faceLabels = ["WHO", "WHAT", "WHERE", "WHEN", "WHY", "HOW"];
+    
+    // Prepare the table data
+    const tableData = [
+      ["", ...faceLabels], // Header row
+      ["TEXT", ...faceLabels.map((_, index) => faceTexts[index] || "")], // Text row
+      ["FILES", ...faceLabels.map((_, index) =>
+        (faceFiles[index] || []).map((file) => file.name).join(",\n")
+      )], // Files row
+    ];
+    
+    setSpreadsheetData(tableData); // Set table data
+    setIsModalOpen(true); // Open the modal
+  };
+  
+
+  // Method for downloading the spreadsheet
+  const handleDownloadClick = async () => {
+    const faceLabels = ["WHO", "WHAT", "WHERE", "WHEN", "WHY", "HOW"];
+    const zip = new JSZip();
+  
+    // Step 1: Generate Transposed Data for the Excel File
+    const spreadsheetData = [["", ...faceLabels]]; // First row with face labels
+    const textRow = ["TEXT", ...faceLabels.map((_, index) => faceTexts[index] || "")];
+    const filesRow = [
+      "FILES",
+      ...faceLabels.map((_, index) =>
+        (faceFiles[index] || []).map((file) => file.name).join(", \n")
+      ),
+    ];
+  
+    // Add rows to the spreadsheet
+    spreadsheetData.push(textRow);
+    spreadsheetData.push(filesRow);
+  
+    // Create a worksheet
+    const worksheet = XLSX.utils.aoa_to_sheet(spreadsheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Cube Data");
+  
+    // Generate Excel buffer
+    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+  
+    // Step 2: Add the Excel File to the ZIP
+    zip.file("CubeData.xlsx", excelBuffer);
+  
+    // Step 3: Add Uploaded Files to the ZIP
+    Object.entries(faceFiles).forEach(([faceIndex, files]) => {
+      if (Array.isArray(files)) {
+        files.forEach((file) => {
+          zip.file(file.name, file);
+        });
+      }
+    });
+  
+    // Step 4: Generate the ZIP file and trigger the download
+    zip.generateAsync({ type: "blob" }).then((content) => {
+      saveAs(content, "CubeDataFolder.zip");
+    });
+  };
   
 
   return (
@@ -262,68 +353,127 @@ const CubicLevel = () => {
       <h1 className="cubic-level-title">Cubic Level</h1>
       <div ref={containerRef} className="cubic-level-container"></div>
   
-      {selectedFaceIndex !== null && (
-        <div className="text-input-overlay">
-        {/* Display the face label */}
-        <h2 className="face-label">{labels[selectedFaceIndex]}</h2>
-      
-        {/* Text Input Area */}
-        <div className="text-area-container">
-          <textarea
-            id="text-area"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type here..."
-          ></textarea>
+      {/* XLSX Button*/}
+      <button
+        className="xlsx-button"
+        onClick={handleXLSXClick}
+      >
+        <img
+          src="/images/buttons/excelButton.jpg" /* may replace with xlsxButton.jpg */
+          alt="XLSX Button"
+          className="xlsx-image"
+        />
+      </button>
 
-          {/* File List Textarea */}
-          <div className="file-list">
-            {faceFiles[selectedFaceIndex]?.map((file, index) => (
-              <div key={index} className="file-item">
-                <button
-                  className="delete-file-button"
-                  onClick={() => handleDeleteFile(selectedFaceIndex, index)}
-                >
-                  X
-                </button>
-                <span>{file.name}</span>
-              </div>
-            ))}
+
+      {/* Spreadsheet Pop-Up */}
+      {isModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <button className="close-button" onClick={() => setIsModalOpen(false)}>
+              X
+            </button>
+            <table className="spreadsheet-table">
+              <thead>
+                <tr>
+                  {spreadsheetData[0].map((header, index) => (
+                    <th key={index}>{header}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {spreadsheetData.slice(1).map((row, rowIndex) => (
+                  <tr key={rowIndex}>
+                    {row.map((cell, cellIndex) => (
+                      <td
+                        key={cellIndex}
+                        style={{
+                          whiteSpace: "pre-wrap",
+                          ...(cellIndex === 0 && { fontWeight: "bold", backgroundColor: "#f4f4f4" }),
+                        }}
+                      >
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
+      )}
 
-        {/* Bullet Button */}
-        <button
-          className="bullet-button"
-          onClick={() => formatText("bullet")}
-        >
+
+      {/* Download Button */}
+      <button
+        className="download-button"
+        onClick={handleDownloadClick}
+      >
         <img
-          src="/images/bulletpoint.jpg"
-          alt="Bullet Point"
-          className="bullet-image"
+          src="/images/buttons/downloadButton.jpg"
+          alt="Download Button"
+          className="download-image"
         />
-        </button>
+      </button>
+  
+      {/* Text Box */}
+      {selectedFaceIndex !== null && (
+        <div className="text-input-overlay">
+          <h2 className="face-label">{labels[selectedFaceIndex]}</h2>
+          <div className="text-area-container">
+            <textarea
+              id="text-area"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type here..."
+            ></textarea>
+            <div className="file-list">
+              {faceFiles[selectedFaceIndex]?.map((file, index) => (
+                <div key={index} className="file-item">
+                  <button
+                    className="delete-file-button"
+                    onClick={() => handleDeleteFile(selectedFaceIndex, index)}
+                  >
+                    X
+                  </button>
+                  <span>{file.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
-        {/* Insert Files / Save Buttons */}
-        <div className="button-container">
-          <label className="upload-button">
-            <input
-              type="file"
-              onChange={handleFileUpload}
-              style={{ display: "none" }}
-              multiple
+          {/* Bullet Points Button */}
+          <button
+            className="bullet-button"
+            onClick={() => formatText("bullet")}
+          >
+            <img
+              src="/images/buttons/bulletpoint.jpg"
+              alt="Bullet Point"
+              className="bullet-image"
             />
-            INSERT FILES
-          </label>
-          <button onClick={handleSave} className="save-button">
-            SAVE
           </button>
+
+          {/* Upload (Insert Files) & Save Buttons */}
+          <div className="button-container">
+            <label className="upload-button">
+              <input
+                type="file"
+                onChange={handleFileUpload}
+                style={{ display: "none" }}
+                multiple
+              />
+              INSERT FILES
+            </label>
+            <button onClick={handleSave} className="save-button">
+              SAVE
+            </button>
+          </div>
         </div>
-      </div>      
       )}
     </div>
-  );  
+  );     
 };
 
 export default CubicLevel;

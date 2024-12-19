@@ -35,6 +35,13 @@ npm install react-router-dom
 ```shell
 npm install three troika-three-text
 ```
+```shell
+npm install xlsx
+```
+```shell
+npm install jszip file-saver
+```
+
 # How-To Run the Application
 ## Frontend: 'client'
 
