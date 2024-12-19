@@ -106,6 +106,7 @@ html, body {
 
 /* FILE LIST */
 .file-list {
+  color: blue !important;
   position: absolute;
   bottom: 5px;
   left: 10px;

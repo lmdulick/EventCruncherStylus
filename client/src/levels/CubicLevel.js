@@ -13,17 +13,39 @@ const CubicLevel = () => {
   const [selectedFaceIndex, setSelectedFaceIndex] = useState(null);
   const [faceTexts, setFaceTexts] = useState({});
   const [inputText, setInputText] = useState("");
-  const [faceFiles, setFaceFiles] = useState({
-    0: [], // Who
-    1: [], // What
-    2: [], // Where
-    3: [], // When
-    4: [], // Why
-    5: [], // How
-  });
+  // const [faceFiles, setFaceFiles] = useState({
+  //   0: { saved: [], pending: [] }, // Who
+  //   1: { saved: [], pending: [] }, // What
+  //   2: { saved: [], pending: [] }, // Where
+  //   3: { saved: [], pending: [] }, // When
+  //   4: { saved: [], pending: [] }, // Why
+  //   5: { saved: [], pending: [] }, // How
+  // });
+  const [faceFiles, setFaceFiles] = useState({}); 
+  const [tempFaceFiles, setTempFaceFiles] = useState({});
+
+  // modal = UI element appearing on top of the main page 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [spreadsheetData, setSpreadsheetData] = useState([]);
   
+
+  // for temporary file uploads
+  useEffect(() => {
+    if (selectedFaceIndex !== null) {
+      setTempFaceFiles((prev) => ({
+        ...prev,
+        [selectedFaceIndex]: {
+          saved: prev[selectedFaceIndex]?.saved || [],
+          pending: [], // Ensure pending is cleared when initializing
+        },
+      }));
+    }
+  }, [selectedFaceIndex]);
+  
+  
+  
+  
+
 
   useEffect(() => {
     // Initialize Scene, Camera, Renderer
@@ -85,6 +107,33 @@ const CubicLevel = () => {
     const mouse = new THREE.Vector2();
 
     // Method for handling a mouse click on the cube
+    // const handleMouseClick = (event) => {
+    //   const rect = renderer.domElement.getBoundingClientRect();
+    //   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    //   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    
+    //   raycaster.setFromCamera(mouse, camera);
+    //   const intersects = raycaster.intersectObject(cube);
+    
+    //   if (intersects.length > 0) {
+    //     const faceMap = [3, 2, 4, 5, 0, 1];
+    //     // [0] : When (val: 3)
+    //     // [1] : Where (val: 2)
+    //     // [2] : Why (val: 4)
+    //     // [3] : How (val: 5)
+    //     // [4] : Who (val: 0)
+    //     // [5] : What (val: 1)
+
+    //     const triangleIndex = Math.floor(intersects[0].faceIndex / 2);
+    //     const faceIndex = faceMap[triangleIndex];
+    
+    //     console.log("Triangle Index:", triangleIndex);
+    //     console.log("Mapped Face Index:", faceIndex);
+    
+    //     setSelectedFaceIndex(faceIndex);
+    //     setInputText(faceTexts[faceIndex] || "");
+    //   }
+    // };
     const handleMouseClick = (event) => {
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -95,23 +144,40 @@ const CubicLevel = () => {
     
       if (intersects.length > 0) {
         const faceMap = [3, 2, 4, 5, 0, 1];
-        // [0] : When (val: 3)
-        // [1] : Where (val: 2)
-        // [2] : Why (val: 4)
-        // [3] : How (val: 5)
-        // [4] : Who (val: 0)
-        // [5] : What (val: 1)
-
         const triangleIndex = Math.floor(intersects[0].faceIndex / 2);
         const faceIndex = faceMap[triangleIndex];
     
-        console.log("Triangle Index:", triangleIndex);
-        console.log("Mapped Face Index:", faceIndex);
+        // Discard unsaved changes for the current face
+        if (selectedFaceIndex !== null && selectedFaceIndex !== faceIndex) {
+          setTempFaceFiles((prev) => ({
+            ...prev,
+            [selectedFaceIndex]: {
+              saved: prev[selectedFaceIndex]?.saved || [],
+              pending: [], // Discard unsaved files
+            },
+          }));
+        }
     
+        // Set tempFaceFiles for the new face
+        setTempFaceFiles((prev) => ({
+          ...prev,
+          [faceIndex]: {
+            saved: faceFiles[faceIndex]?.saved || [], // Load saved files
+            pending: [], // Initialize pending files as empty
+          },
+        }));
+    
+        // Switch to the new face
         setSelectedFaceIndex(faceIndex);
-        setInputText(faceTexts[faceIndex] || "");
+        setInputText(faceTexts[faceIndex] || ""); // Load saved text
       }
     };
+    
+    
+    
+    
+    
+    
     
     renderer.domElement.addEventListener("click", handleMouseClick);
 
@@ -141,83 +207,121 @@ const CubicLevel = () => {
 
   // Method for handling saving data when user clicks "SAVE" button
   const handleSave = () => {
-    const faceLabels = ["Who", "What", "Where", "When", "Why", "How"];
+    setFaceFiles((prev) => {
+      const updatedFaceFiles = { ...prev };
   
-    // Update the current face content
-    const updatedFaceTexts = {
-      ...faceTexts,
-      [selectedFaceIndex]: inputText,
-    };
+      Object.keys(tempFaceFiles).forEach((faceIndex) => {
+        const currentFiles = tempFaceFiles[faceIndex] || { saved: [], pending: [] };
   
-    setFaceTexts(updatedFaceTexts);
+        updatedFaceFiles[faceIndex] = {
+          saved: [
+            ...(currentFiles.saved || []), // Keep existing saved files
+            ...(currentFiles.pending || []), // Add new files from pending
+          ],
+          pending: [], // Clear pending files after saving
+        };
+      });
   
-    console.log("-----------------------------");
-
-    // Check if a new file was added to the face
-    const currentFiles = faceFiles[selectedFaceIndex] || [];
-    if (currentFiles.length > 0) {
-      console.log(`Files successfully added to face "${faceLabels[selectedFaceIndex]}":`);
-      console.log(currentFiles.map((file) => file.name));
-    }
-
-    faceLabels.forEach((label, index) => {
-      const faceText = updatedFaceTexts[index] || "";
-      const files = faceFiles[index]?.map((file) => file.name).join(", ") || "";
-      console.log(`${label}: [${faceText}] ${files ? `Files: ${files}` : ""}`);
+      return updatedFaceFiles;
     });
-
-    console.log("-----------------------------");
   
+    // Save the text for the selected face
+    if (selectedFaceIndex !== null) {
+      setFaceTexts((prev) => ({
+        ...prev,
+        [selectedFaceIndex]: inputText || "",
+      }));
+    }
+  
+    // Reset temporary states
     setSelectedFaceIndex(null);
     setInputText("");
   };
   
+  
+  
+  
 
   // Method for handling uploading a file when user clicks "INSERT FILE" button
+  // const handleFileUpload = (event) => {
+  //   const files = Array.from(event.target.files);
+  
+  //   if (files.length > 0 && selectedFaceIndex !== null) {
+  //     setFaceFiles((prev) => {
+  //       const currentFiles = prev[selectedFaceIndex] || { saved: [], pending: [] };
+  //       return {
+  //         ...prev,
+  //         [selectedFaceIndex]: {
+  //           ...currentFiles,
+  //           pending: [...currentFiles.pending, ...files],
+  //         },
+  //       };
+  //     });
+  
+  //     // Optionally display filenames in the text area
+  //     const newFileNames = files.map((file) => `• ${file.name}`).join("\n");
+  //     setInputText((prevText) => `${prevText}${prevText ? "\n" : ""}${newFileNames}`);
+  //   }
+  // };
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
   
-    // Append new files & update the specific face
     if (files.length > 0 && selectedFaceIndex !== null) {
-      setFaceFiles((prev) => {
-        const updatedFiles = [...prev[selectedFaceIndex], ...files];
+      setTempFaceFiles((prev) => {
+        const currentFiles = prev[selectedFaceIndex] || { saved: [], pending: [] };
+  
         return {
           ...prev,
-          [selectedFaceIndex]: updatedFiles,
+          [selectedFaceIndex]: {
+            saved: currentFiles.saved || [],
+            pending: [...(currentFiles.pending || []), ...files], // Add new files to pending
+          },
         };
       });
   
-      // Add file names as bullet points to the text box
-      const newFileNames = files.map((file) => `• ${file.name}`).join("");
+      const newFileNames = files.map((file) => `• ${file.name}`).join("\n");
       setInputText((prevText) => `${prevText}${prevText ? "\n" : ""}${newFileNames}`);
     }
   };
   
   
-  // Method for handling when a user clicks "X" button and deletes an uploaded file
-  const handleDeleteFile = (faceIndex, fileIndex) => {
-    setFaceFiles((prev) => {
-      const updatedFiles = prev[faceIndex].filter((_, i) => i !== fileIndex); // Remove the file at fileIndex
+
   
-      // Update the text box to remove the bullet point for the deleted file
-      if (faceIndex === selectedFaceIndex) {
-        const fileNameToRemove = prev[faceIndex][fileIndex].name;
-        setInputText((prevText) => {
-          // Remove the bullet point corresponding to the deleted file
-          const updatedText = prevText
-            .split("\n")
-            .filter((line) => line.trim() !== `• ${fileNameToRemove}`)
-            .join("\n");
-          return updatedText;
-        });
-      }
+  // Method for handling when a user clicks "X" button and deletes an uploaded file
+  const handleDeleteFile = (faceIndex, fileIndex, type) => {
+    setTempFaceFiles((prev) => {
+      const currentFiles = prev[faceIndex] || { saved: [], pending: [] };
+  
+      // Remove the file from the specified type (saved or pending)
+      const updatedFiles = {
+        ...currentFiles,
+        [type]: currentFiles[type].filter((_, i) => i !== fileIndex),
+      };
   
       return {
         ...prev,
-        [faceIndex]: updatedFiles, // Update only the selected face's files
+        [faceIndex]: updatedFiles,
       };
     });
+  
+    // Optionally update the text box to remove the file name bullet point
+    setInputText((prevText) => {
+      const fileNameToRemove =
+        type === "saved"
+          ? tempFaceFiles[faceIndex]?.saved[fileIndex]?.name
+          : tempFaceFiles[faceIndex]?.pending[fileIndex]?.name;
+  
+      if (fileNameToRemove) {
+        return prevText
+          .split("\n")
+          .filter((line) => line.trim() !== `• ${fileNameToRemove}`)
+          .join("\n");
+      }
+  
+      return prevText;
+    });
   };
+  
   
   
   // Method for formatting the text box's text & bullet points
@@ -285,21 +389,23 @@ const CubicLevel = () => {
   // Method for viewing the cube data in a spreadsheet (xslx) format
   const handleXLSXClick = () => {
     const faceLabels = ["WHO", "WHAT", "WHERE", "WHEN", "WHY", "HOW"];
-    
+  
     // Prepare the table data
     const tableData = [
       ["", ...faceLabels], // Header row
       ["TEXT", ...faceLabels.map((_, index) => faceTexts[index] || "")], // Text row
-      ["FILES", ...faceLabels.map((_, index) =>
-        (faceFiles[index] || []).map((file) => file.name).join(",\n")
-      )], // Files row
+      ["FILES", ...faceLabels.map((_, index) => {
+        const { saved = [] } = faceFiles[index] || {};
+        return (saved || []).map((file) => file.name).join(",\n");
+      })], // Files row
     ];
-    
+  
     setSpreadsheetData(tableData); // Set table data
     setIsModalOpen(true); // Open the spreadsheet pop-up (modal)
   };
   
 
+ 
   // Method for downloading the spreadsheet
   const handleDownloadClick = async () => {
     const faceLabels = ["WHO", "WHAT", "WHERE", "WHEN", "WHY", "HOW"];
@@ -310,9 +416,10 @@ const CubicLevel = () => {
     const textRow = ["TEXT", ...faceLabels.map((_, index) => faceTexts[index] || "")];
     const filesRow = [
       "FILES",
-      ...faceLabels.map((_, index) =>
-        (faceFiles[index] || []).map((file) => file.name).join(", \n")
-      ),
+      ...faceLabels.map((_, index) => {
+        const { saved = [] } = faceFiles[index] || {};
+        return saved.map((file) => file.name).join(", \n");
+      }),
     ];
   
     // Add rows to the spreadsheet
@@ -332,8 +439,9 @@ const CubicLevel = () => {
   
     // Step 3: Add Uploaded Files to the ZIP
     Object.entries(faceFiles).forEach(([faceIndex, files]) => {
-      if (Array.isArray(files)) {
-        files.forEach((file) => {
+      const { saved = [] } = files; // Work only with saved files
+      if (Array.isArray(saved)) {
+        saved.forEach((file) => {
           zip.file(file.name, file);
         });
       }
@@ -426,19 +534,44 @@ const CubicLevel = () => {
               onKeyDown={handleKeyDown}
               placeholder="Type here..."
             ></textarea>
+            
             <div className="file-list">
-              {faceFiles[selectedFaceIndex]?.map((file, index) => (
-                <div key={index} className="file-item">
+              {/* Render saved files */}
+              {tempFaceFiles[selectedFaceIndex]?.saved.map((file, index) => (
+                <div key={`saved-${index}`} className="file-item">
                   <button
                     className="delete-file-button"
-                    onClick={() => handleDeleteFile(selectedFaceIndex, index)}
+                    onClick={() => handleDeleteFile(selectedFaceIndex, index, "saved")}
                   >
                     X
                   </button>
                   <span>{file.name}</span>
                 </div>
               ))}
+
+              {/* Render pending files */}
+              {tempFaceFiles[selectedFaceIndex]?.pending.map((file, index) => (
+                <div key={`pending-${index}`} className="file-item pending">
+                  <button
+                    className="delete-file-button"
+                    onClick={() => handleDeleteFile(selectedFaceIndex, index, "pending")}
+                  >
+                    X
+                  </button>
+                  <span>{file.name} (unsaved)</span>
+                </div>
+              ))}
             </div>
+
+
+
+
+
+
+
+
+
+
           </div>
 
           {/* Bullet Points Button */}
