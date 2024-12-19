@@ -36,7 +36,7 @@ const CubicLevel = () => {
         ...prev,
         [selectedFaceIndex]: {
           saved: prev[selectedFaceIndex]?.saved || [],
-          pending: [], // Ensure pending is cleared when initializing
+          pending: [],
         },
       }));
     }
@@ -138,14 +138,14 @@ const CubicLevel = () => {
         setTempFaceFiles((prev) => ({
           ...prev,
           [faceIndex]: {
-            saved: faceFiles[faceIndex]?.saved || [], // Load saved files
-            pending: [], // Initialize pending files as empty
+            saved: faceFiles[faceIndex]?.saved || [],
+            pending: [],
           },
         }));
     
         // Switch to the new face
         setSelectedFaceIndex(faceIndex);
-        setInputText(faceTexts[faceIndex] || ""); // Load saved text
+        setInputText(faceTexts[faceIndex] || "");
       }
     };
     
@@ -185,10 +185,10 @@ const CubicLevel = () => {
   
         updatedFaceFiles[faceIndex] = {
           saved: [
-            ...(currentFiles.saved || []), // Keep existing saved files
-            ...(currentFiles.pending || []), // Add new files from pending
+            ...(currentFiles.saved || []),
+            ...(currentFiles.pending || []),
           ],
-          pending: [], // Clear pending files after saving
+          pending: [],
         };
       });
   
@@ -221,7 +221,7 @@ const CubicLevel = () => {
           ...prev,
           [selectedFaceIndex]: {
             saved: currentFiles.saved || [],
-            pending: [...(currentFiles.pending || []), ...files], // Add new files to pending
+            pending: [...(currentFiles.pending || []), ...files],
           },
         };
       });
@@ -345,8 +345,8 @@ const CubicLevel = () => {
       })], // Files row
     ];
   
-    setSpreadsheetData(tableData); // Set table data
-    setIsModalOpen(true); // Open the spreadsheet pop-up (modal)
+    setSpreadsheetData(tableData);
+    setIsModalOpen(true);
   };
   
 
@@ -383,7 +383,7 @@ const CubicLevel = () => {
   
     // Step 3: Add Uploaded Files to the ZIP
     Object.entries(faceFiles).forEach(([faceIndex, files]) => {
-      const { saved = [] } = files; // Work only with saved files
+      const { saved = [] } = files;
       if (Array.isArray(saved)) {
         saved.forEach((file) => {
           zip.file(file.name, file);
@@ -415,7 +415,7 @@ const CubicLevel = () => {
         />
       </button>
 
-      {/* Spreadsheet Pop-Up */}
+      {/* Spreadsheet (Modal) Pop-Up */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
