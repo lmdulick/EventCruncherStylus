@@ -21,8 +21,6 @@ const CubicLevel = () => {
     4: [], // Why
     5: [], // How
   });
-
-  // Add this at the top of your component
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [spreadsheetData, setSpreadsheetData] = useState([]);
   
@@ -85,7 +83,6 @@ const CubicLevel = () => {
     // Raycaster for Face Selection
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
-
 
     // Method for handling a mouse click on the cube
     const handleMouseClick = (event) => {
@@ -180,12 +177,13 @@ const CubicLevel = () => {
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
   
+    // Append new files & update the specific face
     if (files.length > 0 && selectedFaceIndex !== null) {
       setFaceFiles((prev) => {
-        const updatedFiles = [...prev[selectedFaceIndex], ...files]; // Append new files
+        const updatedFiles = [...prev[selectedFaceIndex], ...files];
         return {
           ...prev,
-          [selectedFaceIndex]: updatedFiles, // Update the specific face
+          [selectedFaceIndex]: updatedFiles,
         };
       });
   
@@ -276,9 +274,9 @@ const CubicLevel = () => {
   
       setInputText(newText);
   
-      // Adjust cursor position
+      // Adjust cursor position after '• '
       setTimeout(() => {
-        textarea.selectionStart = textarea.selectionEnd = start + 3; // After '• '
+        textarea.selectionStart = textarea.selectionEnd = start + 3;
       }, 0);
     }
   };
@@ -298,7 +296,7 @@ const CubicLevel = () => {
     ];
     
     setSpreadsheetData(tableData); // Set table data
-    setIsModalOpen(true); // Open the modal
+    setIsModalOpen(true); // Open the spreadsheet pop-up (modal)
   };
   
 
@@ -308,7 +306,7 @@ const CubicLevel = () => {
     const zip = new JSZip();
   
     // Step 1: Generate Transposed Data for the Excel File
-    const spreadsheetData = [["", ...faceLabels]]; // First row with face labels
+    const spreadsheetData = [["", ...faceLabels]];
     const textRow = ["TEXT", ...faceLabels.map((_, index) => faceTexts[index] || "")];
     const filesRow = [
       "FILES",

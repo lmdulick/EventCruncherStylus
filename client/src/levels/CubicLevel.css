@@ -286,7 +286,7 @@ html, body {
 }
 
 
-/* SPREADSHEET POP UP */
+/* SPREADSHEET (MODAL) POP-UP */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -342,5 +342,5 @@ html, body {
 
 .spreadsheet-table td:first-child {
   font-weight: bold;
-  background-color: #f4f4f4; /* Light gray background */
+  background-color: #f4f4f4;
 }
