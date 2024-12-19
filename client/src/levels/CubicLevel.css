@@ -106,7 +106,6 @@ html, body {
 
 /* FILE LIST */
 .file-list {
-  color: blue !important;
   position: absolute;
   bottom: 5px;
   left: 10px;
@@ -130,7 +129,7 @@ html, body {
 
 .file-item span {
   flex: 1;
-  color: #000000;
+  color: black;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

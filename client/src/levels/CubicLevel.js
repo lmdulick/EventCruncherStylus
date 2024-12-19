@@ -42,10 +42,6 @@ const CubicLevel = () => {
     }
   }, [selectedFaceIndex]);
   
-  
-  
-  
-
 
   useEffect(() => {
     // Initialize Scene, Camera, Renderer
@@ -107,33 +103,6 @@ const CubicLevel = () => {
     const mouse = new THREE.Vector2();
 
     // Method for handling a mouse click on the cube
-    // const handleMouseClick = (event) => {
-    //   const rect = renderer.domElement.getBoundingClientRect();
-    //   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    //   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-    
-    //   raycaster.setFromCamera(mouse, camera);
-    //   const intersects = raycaster.intersectObject(cube);
-    
-    //   if (intersects.length > 0) {
-    //     const faceMap = [3, 2, 4, 5, 0, 1];
-    //     // [0] : When (val: 3)
-    //     // [1] : Where (val: 2)
-    //     // [2] : Why (val: 4)
-    //     // [3] : How (val: 5)
-    //     // [4] : Who (val: 0)
-    //     // [5] : What (val: 1)
-
-    //     const triangleIndex = Math.floor(intersects[0].faceIndex / 2);
-    //     const faceIndex = faceMap[triangleIndex];
-    
-    //     console.log("Triangle Index:", triangleIndex);
-    //     console.log("Mapped Face Index:", faceIndex);
-    
-    //     setSelectedFaceIndex(faceIndex);
-    //     setInputText(faceTexts[faceIndex] || "");
-    //   }
-    // };
     const handleMouseClick = (event) => {
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -144,6 +113,13 @@ const CubicLevel = () => {
     
       if (intersects.length > 0) {
         const faceMap = [3, 2, 4, 5, 0, 1];
+        // [0] : When (val: 3)
+        // [1] : Where (val: 2)
+        // [2] : Why (val: 4)
+        // [3] : How (val: 5)
+        // [4] : Who (val: 0)
+        // [5] : What (val: 1)
+
         const triangleIndex = Math.floor(intersects[0].faceIndex / 2);
         const faceIndex = faceMap[triangleIndex];
     
@@ -172,12 +148,6 @@ const CubicLevel = () => {
         setInputText(faceTexts[faceIndex] || ""); // Load saved text
       }
     };
-    
-    
-    
-    
-    
-    
     
     renderer.domElement.addEventListener("click", handleMouseClick);
 
@@ -238,31 +208,8 @@ const CubicLevel = () => {
     setInputText("");
   };
   
-  
-  
-  
 
   // Method for handling uploading a file when user clicks "INSERT FILE" button
-  // const handleFileUpload = (event) => {
-  //   const files = Array.from(event.target.files);
-  
-  //   if (files.length > 0 && selectedFaceIndex !== null) {
-  //     setFaceFiles((prev) => {
-  //       const currentFiles = prev[selectedFaceIndex] || { saved: [], pending: [] };
-  //       return {
-  //         ...prev,
-  //         [selectedFaceIndex]: {
-  //           ...currentFiles,
-  //           pending: [...currentFiles.pending, ...files],
-  //         },
-  //       };
-  //     });
-  
-  //     // Optionally display filenames in the text area
-  //     const newFileNames = files.map((file) => `• ${file.name}`).join("\n");
-  //     setInputText((prevText) => `${prevText}${prevText ? "\n" : ""}${newFileNames}`);
-  //   }
-  // };
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
   
@@ -279,13 +226,12 @@ const CubicLevel = () => {
         };
       });
   
+      // Add bullet points for the new files
       const newFileNames = files.map((file) => `• ${file.name}`).join("\n");
       setInputText((prevText) => `${prevText}${prevText ? "\n" : ""}${newFileNames}`);
     }
   };
   
-  
-
   
   // Method for handling when a user clicks "X" button and deletes an uploaded file
   const handleDeleteFile = (faceIndex, fileIndex, type) => {
@@ -321,7 +267,6 @@ const CubicLevel = () => {
       return prevText;
     });
   };
-  
   
   
   // Method for formatting the text box's text & bullet points
@@ -405,7 +350,6 @@ const CubicLevel = () => {
   };
   
 
- 
   // Method for downloading the spreadsheet
   const handleDownloadClick = async () => {
     const faceLabels = ["WHO", "WHAT", "WHERE", "WHEN", "WHY", "HOW"];
@@ -471,7 +415,6 @@ const CubicLevel = () => {
         />
       </button>
 
-
       {/* Spreadsheet Pop-Up */}
       {isModalOpen && (
         <div className="modal-overlay">
@@ -508,7 +451,6 @@ const CubicLevel = () => {
           </div>
         </div>
       )}
-
 
       {/* Download Button */}
       <button
@@ -562,16 +504,6 @@ const CubicLevel = () => {
                 </div>
               ))}
             </div>
-
-
-
-
-
-
-
-
-
-
           </div>
 
           {/* Bullet Points Button */}
