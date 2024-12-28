@@ -1,4 +1,10 @@
+// DEFAULT INSTRUCTIONS BOX IN PROGRESS
+
+
 import React, { useEffect, useRef, useState } from "react";
+import * as XLSX from "xlsx";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import "./CubicLevel.css";
@@ -9,7 +15,46 @@ const CubicLevel = () => {
   const containerRef = useRef(null);
   const [selectedFaceIndex, setSelectedFaceIndex] = useState(null);
   const [faceTexts, setFaceTexts] = useState({});
-  const [inputText, setInputText] = useState("");
+  // const [inputText, setInputText] = useState("");
+  const [inputText, setInputText] = useState(faceTexts[0] || "");
+
+  // const [faceFiles, setFaceFiles] = useState({
+  //   0: { saved: [], pending: [] }, // Who
+  //   1: { saved: [], pending: [] }, // What
+  //   2: { saved: [], pending: [] }, // Where
+  //   3: { saved: [], pending: [] }, // When
+  //   4: { saved: [], pending: [] }, // Why
+  //   5: { saved: [], pending: [] }, // How
+  // });
+  const [faceFiles, setFaceFiles] = useState({}); 
+  const [tempFaceFiles, setTempFaceFiles] = useState({});
+
+  // modal = UI element appearing on top of the main page 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [spreadsheetData, setSpreadsheetData] = useState([]);
+  
+
+  useEffect(() => {
+    // Set default text when the page loads
+    if (selectedFaceIndex === null) {
+      setInputText("Here's the default text !!!");
+    }
+  }, [selectedFaceIndex]);
+
+
+  // for temporary file uploads
+  useEffect(() => {
+    if (selectedFaceIndex !== null) {
+      setTempFaceFiles((prev) => ({
+        ...prev,
+        [selectedFaceIndex]: {
+          saved: prev[selectedFaceIndex]?.saved || [],
+          pending: [],
+        },
+      }));
+    }
+  }, [selectedFaceIndex]);
+  
 
   useEffect(() => {
     // Initialize Scene, Camera, Renderer
@@ -25,7 +70,7 @@ const CubicLevel = () => {
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setClearColor(0xffffff); // White background
+    renderer.setClearColor(0xffffff);
     container.appendChild(renderer.domElement);
 
     // Ambient Light
@@ -36,26 +81,27 @@ const CubicLevel = () => {
     const geometry = new THREE.BoxGeometry(3, 3, 3);
     const textureLoader = new THREE.TextureLoader();
 
+    // Render Cube Faces
     const materials = [
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/whenB.jpg"), // When face !
+        map: textureLoader.load("/images/cube_faces/whenBB.jpg"), // WHEN face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/whereB.jpg"), // Where face !
+        map: textureLoader.load("/images/cube_faces/whereBB.jpg"), // WHERE face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/whyB.jpg"), // Why face !
+        map: textureLoader.load("/images/cube_faces/whyBB.jpg"), // WHY face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/howB.jpg"), // How face !
+        map: textureLoader.load("/images/cube_faces/howBB.jpg"), // HOW face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/whoB.jpg"), // Who face !
+        map: textureLoader.load("/images/cube_faces/whoBB.jpg"), // WHO face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/whatB.jpg"), // What face !
+        map: textureLoader.load("/images/cube_faces/whatBB.jpg"), // WHAT face
       }),
-    ];    
+    ];
 
     const cube = new THREE.Mesh(geometry, materials);
     scene.add(cube);
@@ -69,6 +115,7 @@ const CubicLevel = () => {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
+    // Method for handling a mouse click on the cube
     const handleMouseClick = (event) => {
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -78,51 +125,38 @@ const CubicLevel = () => {
       const intersects = raycaster.intersectObject(cube);
     
       if (intersects.length > 0) {
-        // Correct face mapping for labels
         const faceMap = [3, 2, 4, 5, 0, 1];
-        // Who: 0 -p5
-        // What: 1 -p6
-        // When: 3 -p1
-        // Where: 2 - p2
-        // Why: 4 -p3
-        // How: 5 -p4
+        // [0] : When (val: 3)
+        // [1] : Where (val: 2)
+        // [2] : Why (val: 4)
+        // [3] : How (val: 5)
+        // [4] : Who (val: 0)
+        // [5] : What (val: 1)
 
         const triangleIndex = Math.floor(intersects[0].faceIndex / 2);
         const faceIndex = faceMap[triangleIndex];
     
-        console.log("Triangle Index:", triangleIndex);
-        console.log("Mapped Face Index:", faceIndex);
-
-        // Original and clicked images for the faces
-        const originalImages = [
-          textureLoader.load("/images/whenB.jpg"),   // When face original
-          textureLoader.load("/images/whereB.jpg"),  // Where face original
-          textureLoader.load("/images/whyB.jpg"),    // Why face original
-          textureLoader.load("/images/howB.jpg"),    // How face original
-          textureLoader.load("/images/whoB.jpg"),    // Who face original
-          textureLoader.load("/images/whatB.jpg"),   // What face original
-        ];
-
-        const clickedImages = [
-          textureLoader.load("/images/whenR.jpg"),   // When face clicked
-          textureLoader.load("/images/whereR.jpg"),  // Where face clicked
-          textureLoader.load("/images/whyR.jpg"),    // Why face clicked
-          textureLoader.load("/images/howR.jpg"),    // How face clicked
-          textureLoader.load("/images/whoR.jpg"),    // Who face clicked
-          textureLoader.load("/images/whatR.jpg"),   // What face clicked
-        ];
-
-        // Reset all faces to their original textures
-        for (let i = 0; i < cube.material.length; i++) {
-          cube.material[i].map = originalImages[i];
-          cube.material[i].needsUpdate = true;
+        // Discard unsaved changes for the current face
+        if (selectedFaceIndex !== null && selectedFaceIndex !== faceIndex) {
+          setTempFaceFiles((prev) => ({
+            ...prev,
+            [selectedFaceIndex]: {
+              saved: prev[selectedFaceIndex]?.saved || [],
+              pending: [], // Discard unsaved files
+            },
+          }));
         }
-
-        // Change only the clicked face to the highlighted texture
-        cube.material[faceIndex].map = clickedImages[faceIndex];
-        cube.material[faceIndex].needsUpdate = true;
-
-        // Update the state
+    
+        // Set tempFaceFiles for the new face
+        setTempFaceFiles((prev) => ({
+          ...prev,
+          [faceIndex]: {
+            saved: faceFiles[faceIndex]?.saved || [],
+            pending: [],
+          },
+        }));
+    
+        // Switch to the new face
         setSelectedFaceIndex(faceIndex);
         setInputText(faceTexts[faceIndex] || "");
       }
@@ -153,38 +187,102 @@ const CubicLevel = () => {
     };
   }, [faceTexts]);
 
-  const handleSave = () => {
-    const faceLabels = ["Who", "What", "Where", "When", "Why", "How"];
-  
-    // Update the current face content
-    const updatedFaceTexts = {
-      ...faceTexts,
-      [selectedFaceIndex]: inputText,
-    };
-  
-    // Generate and print the cube's contents
-    const output = faceLabels
-      .map((label, index) => `${label}: [${updatedFaceTexts[index] || ""}]`)
-      .join("\n");
-  
-    console.log(output); // Print to terminal
-  
-    // Update state after logging
-    setFaceTexts(updatedFaceTexts);
-    setSelectedFaceIndex(null);
-  };
 
+  // Method for handling saving data when user clicks "SAVE" button
+  const handleSave = () => {
+    setFaceFiles((prev) => {
+      const updatedFaceFiles = { ...prev };
+  
+      Object.keys(tempFaceFiles).forEach((faceIndex) => {
+        const currentFiles = tempFaceFiles[faceIndex] || { saved: [], pending: [] };
+  
+        updatedFaceFiles[faceIndex] = {
+          saved: [
+            ...(currentFiles.saved || []),
+            ...(currentFiles.pending || []),
+          ],
+          pending: [],
+        };
+      });
+  
+      return updatedFaceFiles;
+    });
+  
+    // Save the text for the selected face
+    if (selectedFaceIndex !== null) {
+      setFaceTexts((prev) => ({
+        ...prev,
+        [selectedFaceIndex]: inputText || "",
+      }));
+    }
+  
+    // Reset temporary states
+    setSelectedFaceIndex(null);
+    setInputText("");
+  };
+  
+
+  // Method for handling uploading a file when user clicks "INSERT FILE" button
   const handleFileUpload = (event) => {
-    const files = event.target.files; // Access uploaded files
-    if (files.length > 0) {
-      console.log("Uploaded Files:");
-      for (let i = 0; i < files.length; i++) {
-        console.log(`File ${i + 1}:`, files[i].name);
-      }
-      alert(`${files.length} file(s) uploaded successfully!`);
+    const files = Array.from(event.target.files);
+  
+    if (files.length > 0 && selectedFaceIndex !== null) {
+      setTempFaceFiles((prev) => {
+        const currentFiles = prev[selectedFaceIndex] || { saved: [], pending: [] };
+  
+        return {
+          ...prev,
+          [selectedFaceIndex]: {
+            saved: currentFiles.saved || [],
+            pending: [...(currentFiles.pending || []), ...files],
+          },
+        };
+      });
+  
+      // Add bullet points for the new files
+      const newFileNames = files.map((file) => `• ${file.name}`).join("\n");
+      setInputText((prevText) => `${prevText}${prevText ? "\n" : ""}${newFileNames}`);
     }
   };
-
+  
+  
+  // Method for handling when a user clicks "X" button and deletes an uploaded file
+  const handleDeleteFile = (faceIndex, fileIndex, type) => {
+    setTempFaceFiles((prev) => {
+      const currentFiles = prev[faceIndex] || { saved: [], pending: [] };
+  
+      // Remove the file from the specified type (saved or pending)
+      const updatedFiles = {
+        ...currentFiles,
+        [type]: currentFiles[type].filter((_, i) => i !== fileIndex),
+      };
+  
+      return {
+        ...prev,
+        [faceIndex]: updatedFiles,
+      };
+    });
+  
+    // Optionally update the text box to remove the file name bullet point
+    setInputText((prevText) => {
+      const fileNameToRemove =
+        type === "saved"
+          ? tempFaceFiles[faceIndex]?.saved[fileIndex]?.name
+          : tempFaceFiles[faceIndex]?.pending[fileIndex]?.name;
+  
+      if (fileNameToRemove) {
+        return prevText
+          .split("\n")
+          .filter((line) => line.trim() !== `• ${fileNameToRemove}`)
+          .join("\n");
+      }
+  
+      return prevText;
+    });
+  };
+  
+  
+  // Method for formatting the text box's text & bullet points
   const formatText = (command) => {
     const textarea = document.getElementById("text-area");
     const start = textarea.selectionStart;
@@ -194,23 +292,19 @@ const CubicLevel = () => {
     const textAfterCursor = inputText.substring(end);
     const currentLine = textBeforeCursor.split("\n").pop();
   
-    const lines = inputText.split("\n"); // Split input text into lines
-    const lineIndex = lines.length - 1; // Get the current line index
+    const lines = inputText.split("\n");
+    const lineIndex = lines.length - 1;
     let newText = inputText;
   
     switch (command) {
       case "bullet":
-        // Check if the current line starts with a bullet
         if (currentLine.startsWith("•")) {
-          // Remove bullet if it exists
           lines[lineIndex] = currentLine.substring(2);
         } else {
-          // Add bullet point
           lines[lineIndex] = `• ${currentLine.trim()}`;
         }
         newText = lines.join("\n");
         break;
-      // Add other formatting options here if needed
       default:
         break;
     }
@@ -218,6 +312,8 @@ const CubicLevel = () => {
     setInputText(newText);
   };
  
+
+  // Method for auto adding bullet points
   const handleKeyDown = (event) => {
     const textarea = event.target;
   
@@ -234,17 +330,84 @@ const CubicLevel = () => {
         // Add a new bullet line
         newText = `${textBeforeCursor}\n• ${textAfterCursor}`;
       } else {
-        // Plain new line
+        // Add a plain new line
         newText = `${textBeforeCursor}\n${textAfterCursor}`;
       }
   
       setInputText(newText);
   
-      // Adjust cursor position
+      // Adjust cursor position after '• '
       setTimeout(() => {
-        textarea.selectionStart = textarea.selectionEnd = start + 3; // After '• '
+        textarea.selectionStart = textarea.selectionEnd = start + 3;
       }, 0);
     }
+  };
+
+  
+  // Method for viewing the cube data in a spreadsheet (xslx) format
+  const handleXLSXClick = () => {
+    const faceLabels = ["WHO", "WHAT", "WHERE", "WHEN", "WHY", "HOW"];
+  
+    // Prepare the table data
+    const tableData = [
+      ["", ...faceLabels], // Header row
+      ["TEXT", ...faceLabels.map((_, index) => faceTexts[index] || "")], // Text row
+      ["FILES", ...faceLabels.map((_, index) => {
+        const { saved = [] } = faceFiles[index] || {};
+        return (saved || []).map((file) => file.name).join(",\n");
+      })], // Files row
+    ];
+  
+    setSpreadsheetData(tableData);
+    setIsModalOpen(true);
+  };
+  
+
+  // Method for downloading the spreadsheet
+  const handleDownloadClick = async () => {
+    const faceLabels = ["WHO", "WHAT", "WHERE", "WHEN", "WHY", "HOW"];
+    const zip = new JSZip();
+  
+    // Step 1: Generate Transposed Data for the Excel File
+    const spreadsheetData = [["", ...faceLabels]];
+    const textRow = ["TEXT", ...faceLabels.map((_, index) => faceTexts[index] || "")];
+    const filesRow = [
+      "FILES",
+      ...faceLabels.map((_, index) => {
+        const { saved = [] } = faceFiles[index] || {};
+        return saved.map((file) => file.name).join(", \n");
+      }),
+    ];
+  
+    // Add rows to the spreadsheet
+    spreadsheetData.push(textRow);
+    spreadsheetData.push(filesRow);
+  
+    // Create a worksheet
+    const worksheet = XLSX.utils.aoa_to_sheet(spreadsheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Cube Data");
+  
+    // Generate Excel buffer
+    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+  
+    // Step 2: Add the Excel File to the ZIP
+    zip.file("CubeData.xlsx", excelBuffer);
+  
+    // Step 3: Add Uploaded Files to the ZIP
+    Object.entries(faceFiles).forEach(([faceIndex, files]) => {
+      const { saved = [] } = files;
+      if (Array.isArray(saved)) {
+        saved.forEach((file) => {
+          zip.file(file.name, file);
+        });
+      }
+    });
+  
+    // Step 4: Generate the ZIP file and trigger the download
+    zip.generateAsync({ type: "blob" }).then((content) => {
+      saveAs(content, "CubeDataFolder.zip");
+    });
   };
   
 
@@ -253,49 +416,143 @@ const CubicLevel = () => {
       <h1 className="cubic-level-title">Cubic Level</h1>
       <div ref={containerRef} className="cubic-level-container"></div>
   
+      {/* XLSX Button*/}
+      <button
+        className="xlsx-button"
+        onClick={handleXLSXClick}
+      >
+        <img
+          src="/images/buttons/excelButton.jpg" /* may replace with xlsxButton.jpg */
+          alt="XLSX Button"
+          className="xlsx-image"
+        />
+      </button>
+
+      {/* Spreadsheet (Modal) Pop-Up */}
+      {isModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <button className="close-button" onClick={() => setIsModalOpen(false)}>
+              X
+            </button>
+            <table className="spreadsheet-table">
+              <thead>
+                <tr>
+                  {spreadsheetData[0].map((header, index) => (
+                    <th key={index}>{header}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {spreadsheetData.slice(1).map((row, rowIndex) => (
+                  <tr key={rowIndex}>
+                    {row.map((cell, cellIndex) => (
+                      <td
+                        key={cellIndex}
+                        style={{
+                          whiteSpace: "pre-wrap",
+                          ...(cellIndex === 0 && { fontWeight: "bold", backgroundColor: "#f4f4f4" }),
+                        }}
+                      >
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Download Button */}
+      <button
+        className="download-button"
+        onClick={handleDownloadClick}
+      >
+        <img
+          src="/images/buttons/downloadButton.jpg"
+          alt="Download Button"
+          className="download-image"
+        />
+      </button>
+  
+      {/* Text Box */}
       {selectedFaceIndex !== null && (
         <div className="text-input-overlay">
-        {/* Display the face label */}
-        <h2 className="face-label">{labels[selectedFaceIndex]}</h2>
-      
-        {/* Text Input Area */}
-        <textarea
-          id="text-area"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type here..."
-        ></textarea>
-      
-        {/* Bullet Button */}
-        <button
-          className="bullet-button"
-          onClick={() => formatText("bullet")}
-        >
-          <img
-            src="/images/bulletpoint.jpg"
-            alt="Bullet Point"
-            className="bullet-image"
-          />
-        </button>
+          <h2 className="face-label">
+            {/* {labels[selectedFaceIndex]} */}
+            {selectedFaceIndex !== null ? labels[selectedFaceIndex] : "Default"}
+          </h2>
+          <div className="text-area-container">
+            <textarea
+              id="text-area"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type here..."
+            ></textarea>
+            
+            <div className="file-list">
+              {/* Render saved files */}
+              {tempFaceFiles[selectedFaceIndex]?.saved.map((file, index) => (
+                <div key={`saved-${index}`} className="file-item">
+                  <button
+                    className="delete-file-button"
+                    onClick={() => handleDeleteFile(selectedFaceIndex, index, "saved")}
+                  >
+                    X
+                  </button>
+                  <span>{file.name}</span>
+                </div>
+              ))}
 
-        {/* Upload Files and Save Buttons */}
-        <label className="upload-button">
-          <input
-            type="file"
-            onChange={handleFileUpload}
-            style={{ display: "none" }}
-            multiple
-          />
-          UPLOAD FILES
-        </label>
-        <button onClick={handleSave} className="save-button">
-          SAVE
-        </button>
-      </div>
+              {/* Render pending files */}
+              {tempFaceFiles[selectedFaceIndex]?.pending.map((file, index) => (
+                <div key={`pending-${index}`} className="file-item pending">
+                  <button
+                    className="delete-file-button"
+                    onClick={() => handleDeleteFile(selectedFaceIndex, index, "pending")}
+                  >
+                    X
+                  </button>
+                  <span>{file.name} (unsaved)</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bullet Points Button */}
+          <button
+            className="bullet-button"
+            onClick={() => formatText("bullet")}
+          >
+            <img
+              src="/images/buttons/bulletpoint.jpg"
+              alt="Bullet Point"
+              className="bullet-image"
+            />
+          </button>
+
+          {/* Upload (Insert Files) & Save Buttons */}
+          <div className="button-container">
+            <label className="upload-button">
+              <input
+                type="file"
+                onChange={handleFileUpload}
+                style={{ display: "none" }}
+                multiple
+              />
+              INSERT FILES
+            </label>
+            <button onClick={handleSave} className="save-button">
+              SAVE
+            </button>
+          </div>
+        </div>
       )}
     </div>
-  );  
+  );     
 };
 
 export default CubicLevel;

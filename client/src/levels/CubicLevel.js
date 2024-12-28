@@ -13,23 +13,45 @@ const CubicLevel = () => {
   const [selectedFaceIndex, setSelectedFaceIndex] = useState(null);
   const [faceTexts, setFaceTexts] = useState({});
   const [inputText, setInputText] = useState("");
-  // const [faceFiles, setFaceFiles] = useState({
-  //   0: { saved: [], pending: [] }, // Who
-  //   1: { saved: [], pending: [] }, // What
-  //   2: { saved: [], pending: [] }, // Where
-  //   3: { saved: [], pending: [] }, // When
-  //   4: { saved: [], pending: [] }, // Why
-  //   5: { saved: [], pending: [] }, // How
-  // });
   const [faceFiles, setFaceFiles] = useState({}); 
   const [tempFaceFiles, setTempFaceFiles] = useState({});
 
   // modal = UI element appearing on top of the main page 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // X modal = excel spreadsheet modal
+  // I modal = instructions modal
+  const [isXModalOpen, setIsXModalOpen] = useState(false);
   const [spreadsheetData, setSpreadsheetData] = useState([]);
+  const [isIModalOpen, setIsIModalOpen] = useState(false);
+
+
+  // Toggle between the Instructions Modal and the UI
+  const toggleInstructionsModal = () => {
+    setIsIModalOpen(!isIModalOpen);
+  };
   
 
-  // for temporary file uploads
+  useEffect(() => {
+    if (isIModalOpen) {
+      const textarea = document.querySelector('.instructions-textbox');
+
+      if (textarea) {
+        textarea.addEventListener('input', function () {
+          this.style.height = 'auto'; // Reset the height
+          this.style.height = `${this.scrollHeight}px`; // Adjust to fit content
+        });
+
+        // Cleanup event listener when the modal closes or component unmounts
+        return () => {
+          textarea.removeEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = `${this.scrollHeight}px`;
+          });
+        };
+      }
+    }
+  }, [isIModalOpen]); // Runs only when `isIModalOpen` changes
+
+  // For temporary file uploads
   useEffect(() => {
     if (selectedFaceIndex !== null) {
       setTempFaceFiles((prev) => ({
@@ -346,7 +368,7 @@ const CubicLevel = () => {
     ];
   
     setSpreadsheetData(tableData);
-    setIsModalOpen(true);
+    setIsXModalOpen(true);
   };
   
 
@@ -416,10 +438,10 @@ const CubicLevel = () => {
       </button>
 
       {/* Spreadsheet (Modal) Pop-Up */}
-      {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <button className="close-button" onClick={() => setIsModalOpen(false)}>
+      {isXModalOpen && (
+        <div className="ssh-modal-overlay">
+          <div className="ssh-modal-content">
+            <button className="close-button" onClick={() => setIsXModalOpen(false)}>
               X
             </button>
             <table className="spreadsheet-table">
@@ -467,6 +489,11 @@ const CubicLevel = () => {
       {/* Text Box */}
       {selectedFaceIndex !== null && (
         <div className="text-input-overlay">
+          { /* Instructions Button */}
+          <button className="instructions-button" onClick={toggleInstructionsModal}>
+            ✱
+          </button>
+
           <h2 className="face-label">{labels[selectedFaceIndex]}</h2>
           <div className="text-area-container">
             <textarea
@@ -478,7 +505,7 @@ const CubicLevel = () => {
             ></textarea>
             
             <div className="file-list">
-              {/* Render saved files */}
+              {/* Saved Files */}
               {tempFaceFiles[selectedFaceIndex]?.saved.map((file, index) => (
                 <div key={`saved-${index}`} className="file-item">
                   <button
@@ -491,7 +518,7 @@ const CubicLevel = () => {
                 </div>
               ))}
 
-              {/* Render pending files */}
+              {/* Unsaved Files */}
               {tempFaceFiles[selectedFaceIndex]?.pending.map((file, index) => (
                 <div key={`pending-${index}`} className="file-item pending">
                   <button
@@ -535,9 +562,45 @@ const CubicLevel = () => {
           </div>
         </div>
       )}
+
+      {/* Instructions (Modal) Pop-Up */}
+      {isIModalOpen && (
+        <div className="i-modal-overlay">
+          <div className="i-modal-content">
+            <button className="close-button" onClick={toggleInstructionsModal}>
+              X
+            </button>
+            <textarea
+              readOnly
+              className="instructions-textbox"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              ref={(textarea) => {
+                if (textarea) {
+                  textarea.style.height = "auto";
+                  const newHeight = textarea.scrollHeight;
+                  const maxHeight = parseInt(
+                    window.getComputedStyle(textarea).getPropertyValue("max-height"),
+                    10
+                  );
+            
+                  // Manage scroll bar
+                  if (newHeight > maxHeight) {
+                    textarea.style.height = `${maxHeight}px`;
+                    textarea.style.overflowY = "auto"; // Enable scroll bar
+                  } else {
+                    textarea.style.height = `${newHeight}px`;
+                    textarea.style.overflowY = "hidden"; // Hide scroll bar
+                  }
+                }
+              }}
+              placeholder="None."
+              ></textarea>
+          </div>
+        </div>
+      )}
     </div>
   );     
 };
 
 export default CubicLevel;
-

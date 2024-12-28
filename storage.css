@@ -1,174 +1,349 @@
+/* DEFAULT INSTRUCTIONS BOX IN PROGRESS */
+
+
+/* DEFAULT FORMATTING */
 * {
-    margin: 0;
-    padding: 0;
-    border: 0;
-    box-sizing: border-box;
-  }
-  
-  html, body {
-    height: 100%;
-    overflow: hidden;
-    background-color: #ffffff; /* Set a solid background to match */
-  }
-  
-  
-  /* CUBIC FORMATTING */
-  .cubic-level {
-    display: flex;
-    height: 100vh; /* Full height */
-    margin: 0;
-  }
-  
-  .cubic-level-container {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 50%; /* Left half of the screen */
-    height: 100vh;
-    overflow: hidden;
-  }
-  
-  .cubic-level-title {
-    text-align: center; /* Center the text horizontally */
-    font-size: 2rem; /* Adjust font size */
-    margin: 0;
-    padding: 20px 0; /* Add spacing on top and bottom */
-    width: 100%; /* Ensure it spans the full width */
-    position: absolute; /* Ensures it's positioned at the top */
-    top: 0; /* Align to the top of the viewport */
-    left: 0;
-  }
-  
-  .face-label {
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin-bottom: 10px;
-    text-align: center;
-    color: #333;
-  }
-  
-  
-  /* TEXT FORMATTING */
-  .text-input-overlay {
-    position: absolute;
-    right: 10%;
-    top: 50%;
-    transform: translateY(-50%);
-    background: white;
-    box-shadow: none; /* Remove shadow */
-    border: none;
-  }
-  
-  .text-input-overlay textarea {
-    width: 100%;
-    height: 500px; /* Increase the height as needed */
-    margin-bottom: 8px;
-    padding: 16px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    resize: none; /* Disable manual resizing */
-    font-size: 1 rem;
-    line-height: 1.5;
-  }
-  
-  
-  /* TEXT BOX */
-  .text-input-overlay button {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  .text-input-overlay button:hover {
-    background-color: #0056b3;
-  }
-  
-  
-  /* BUTTON CONTAINER */
-  .button-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    margin-top: 10px;
-    width: 100%;
-  }
-  
-  
-  /* UPLOAD BUTTON */
-  .upload-button {
-    background-color: #ff9800; /* Orange */
-    color: white;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    text-align: center;
-    font-size: 1rem;
-    font-weight: bold;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    top: -29px;
-    right: 130px;
-  }
-  
-  .upload-button:hover {
-    background-color: #e68900; /* Darker orange on hover */
-  }
-  
-  
-  /* SAVE BUTTON */
-  .save-button {
-    background-color: #007bff; /* Blue */
-    color: white;
-    padding: 8px 16px;
-    border-radius: 4px;
-    border: none;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: bold;
-    justify-content: center;
-    position: relative;
-    top: -29px;
-    right: -190px;
-  }
-  
-  .save-button:hover {
-    background-color: #0056b3;
-  }
-  
-  
-  /* BULLET BUTTON */
-  .bullet-button {
-    background-color: #ffffff;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 5px;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    width: 30px;
-    height: 30px;
-    position: relative;
-    top: 5px;
-    left: 5px;
-  }
-  
-  .bullet-button:hover {
-    background-color: #f9f9f9; /* Light hover effect */
-    border-color: #bbb;
-    box-shadow: 0 10px 12px rgba(0, 0, 0, 0.2); /* Deeper shadow on hover */
-  }
-  
-  .bullet-image {
-    width: 40px; /* Set the size of the image */
-    height: 40px;
-    object-fit: contain; /* Ensures the image scales properly */
-  }
-  
+  margin: 0;
+  padding: 0;
+  border: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background-color: #ffffff;
+}
+
+
+/* CUBE FORMATTING */
+.cubic-level {
+  display: flex;
+  height: 100vh;
+  margin: 0;
+}
+
+.cubic-level-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 50%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.cubic-level-title {
+  text-align: center;
+  font-size: 2rem;
+  margin: 0;
+  padding: 20px 0;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.face-label {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: center;
+  color: #333;
+}
+
+
+/* TEXT FORMATTING */
+.text-input-overlay {
+  position: absolute;
+  right: 10%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: white;
+  box-shadow: none;
+  border: none;
+}
+
+.text-input-overlay textarea {
+  width: 100%;
+  height: 500px;
+  margin-bottom: 8px;
+  padding: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: none;
+  font-size: 1 rem;
+  line-height: 1.5;
+}
+
+
+/* TEXT BOX */
+.text-input-overlay button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.text-input-overlay button:hover {
+  background-color: #0056b3;
+}
+
+
+/* TEXT INPUT AREA */
+.text-area-container {
+  position: relative;
+  width: 100%;
+  height: 500px;
+}
+
+.text-area-container textarea {
+  width: 100%;
+  height: 100%;
+  padding-bottom: 40px;
+  box-sizing: border-box;
+  resize: none;
+}
+
+
+/* FILE LIST */
+.file-list {
+  position: absolute;
+  bottom: 5px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-start;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background-color: #f8f9fa;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 5px 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.file-item span {
+  flex: 1;
+  color: black;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-left: 10px;
+}
+
+.delete-file-button {
+  background: #ff0000 !important;
+  color: #ffffff !important;
+  border: none;
+  font-size: 1rem;
+  border-radius: 4px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.delete-file-button:hover {
+  background: #cc0000 !important;
+}
+
+
+/* CONTAINER FOR BUTTONS */
+.button-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+
+/* BULLET POINT BUTTON */
+.bullet-button {
+  background-color: #ffffff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 5px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 30px;
+  height: 30px;
+
+  position: relative;
+  top: 35px;
+  left: 5px;
+}
+
+.bullet-button:hover {
+  background-color: #f9f9f9;
+  border-color: #bbb;
+  box-shadow: 0 10px 12px rgba(0, 0, 0, 0.2);
+}
+
+.bullet-image {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+
+/* UPLOAD (INSERT FILES) BUTTON */
+.upload-button {
+  background-color: #ff9800;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+
+  position: relative;
+  left: 50px;
+}
+
+.upload-button:hover {
+  background-color: #e68900;
+}
+
+
+/* SAVE BUTTON */
+.save-button {
+  background-color: #007bff;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.save-button:hover {
+  background-color: #0056b3;
+}
+
+
+/* XLSX BUTTON */
+.xlsx-button {
+  background: white !important;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  position: fixed;
+  z-index: 1000;
+  bottom: 5px;
+  right: 80px;
+}
+
+.xlsx-image {
+  width: 50px;
+  height: 50px;
+}
+
+.xlsx-button:hover {
+  background-color: #f9f9f9;
+  border-color: #bbb;
+  box-shadow: 0 10px 12px rgba(0, 0, 0, 0.2);
+}
+
+
+/* DOWNLOAD BUTTON */
+.download-button {
+  position: fixed;
+  background: white !important;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  position: fixed;
+  z-index: 1000;
+  bottom: 5px;
+  right: 20px;
+}
+
+.download-image {
+  width: 50px;
+  height: 50px;
+}
+
+.download-button:hover {
+  background-color: #f9f9f9;
+  border-color: #bbb;
+  box-shadow: 0 10px 12px rgba(0, 0, 0, 0.2);
+}
+
+
+/* SPREADSHEET (MODAL) POP-UP */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background: white;
+  color: black;
+  padding: 20px;
+  border-radius: 8px;
+  width: 80%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: red;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.spreadsheet-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.spreadsheet-table th,
+.spreadsheet-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+}
+
+.spreadsheet-table th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+}
+
+.spreadsheet-table td:first-child {
+  font-weight: bold;
+  background-color: #f4f4f4;
+}

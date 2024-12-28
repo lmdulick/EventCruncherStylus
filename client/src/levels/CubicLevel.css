@@ -44,8 +44,11 @@ html, body {
   font-size: 1.5rem;
   font-weight: bold;
   margin-bottom: 10px;
+  /* text-align: left; */
   text-align: center;
   color: #333;
+  position: relative;
+  top: -10px;
 }
 
 
@@ -68,7 +71,7 @@ html, body {
   border: 1px solid #ccc;
   border-radius: 4px;
   resize: none;
-  font-size: 1 rem;
+  font-size: 1rem;
   line-height: 1.5;
 }
 
@@ -287,7 +290,7 @@ html, body {
 
 
 /* SPREADSHEET (MODAL) POP-UP */
-.modal-overlay {
+.ssh-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -300,10 +303,10 @@ html, body {
   z-index: 2000;
 }
 
-.modal-content {
+.ssh-modal-content {
   background: white;
   color: black;
-  padding: 20px;
+  padding: 45px;
   border-radius: 8px;
   width: 80%;
   max-height: 90vh;
@@ -321,6 +324,10 @@ html, body {
   padding: 5px 10px;
   border-radius: 4px;
   cursor: pointer;
+}
+
+.close-button:hover {
+  background-color: #cc0000;
 }
 
 .spreadsheet-table {
@@ -343,4 +350,73 @@ html, body {
 .spreadsheet-table td:first-child {
   font-weight: bold;
   background-color: #f4f4f4;
+}
+
+
+/* ADDITIONAL INSTRUCTIONS BUTTON */
+.instructions-button {
+  background-color: #28a745 !important;
+  color: white;
+  /* font-weight: bold; */
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px !important;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  position: absolute;
+  top: 10px;
+  right: 4px;
+  margin-right: 16px;
+  z-index: 1000;
+  transition: background-color 0.3s ease;
+}
+
+.instructions-button:hover {
+  background-color: #218838 !important;
+}
+
+
+/* ADDITIONAL INSTRUCTIONS (MODAL) POP-UP */
+.i-modal-overlay {
+  position: fixed;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.i-modal-content {
+  background: white;
+  color: black;
+  padding: 45px;
+  border-radius: 8px;
+  width: 80%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); 
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.instructions-textbox {
+  width: 100%;
+  height: auto;
+  max-height: 90vh;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 1rem;
+  resize: none;
+  background-color: #f9f9f9;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
