@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import "./CubicLevel.css";
 
-const labels = ["Who", "What", "Where", "When", "Why", "How"];
+const labels = ["Who", "What", "When", "Where", "Why", "How"];
 
 const CubicLevel = () => {
   const containerRef = useRef(null);
@@ -15,6 +15,14 @@ const CubicLevel = () => {
   const [inputText, setInputText] = useState("");
   const [faceFiles, setFaceFiles] = useState({}); 
   const [tempFaceFiles, setTempFaceFiles] = useState({});
+  const [instructionsData, setInstructionsData] = useState({
+    0: "", // Who
+    1: "", // What
+    2: "", // When
+    3: "", // Where
+    4: "", // Why
+    5: "", // How
+  });
 
   // modal = UI element appearing on top of the main page 
   // X modal = excel spreadsheet modal
@@ -27,6 +35,15 @@ const CubicLevel = () => {
   // Toggle between the Instructions Modal and the UI
   const toggleInstructionsModal = () => {
     setIsIModalOpen(!isIModalOpen);
+  };
+
+
+  // Update instructions for the selected face
+  const handleInstructionsChange = (faceIndex, value) => {
+    setInstructionsData((prev) => ({
+      ...prev,
+      [faceIndex]: value,
+    }));
   };
   
 
@@ -93,10 +110,10 @@ const CubicLevel = () => {
     // Render Cube Faces
     const materials = [
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/cube_faces/whenBB.jpg"), // WHEN face
+        map: textureLoader.load("/images/cube_faces/whereBB.jpg"), // WHERE face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/cube_faces/whereBB.jpg"), // WHERE face
+        map: textureLoader.load("/images/cube_faces/whenBB.jpg"), // WHEN face
       }),
       new THREE.MeshBasicMaterial({
         map: textureLoader.load("/images/cube_faces/whyBB.jpg"), // WHY face
@@ -135,8 +152,8 @@ const CubicLevel = () => {
     
       if (intersects.length > 0) {
         const faceMap = [3, 2, 4, 5, 0, 1];
-        // [0] : When (val: 3)
-        // [1] : Where (val: 2)
+        // [0] : Where (val: 3)
+        // [1] : When (val: 2)
         // [2] : Why (val: 4)
         // [3] : How (val: 5)
         // [4] : Who (val: 0)
@@ -144,7 +161,7 @@ const CubicLevel = () => {
 
         const triangleIndex = Math.floor(intersects[0].faceIndex / 2);
         const faceIndex = faceMap[triangleIndex];
-    
+
         // Discard unsaved changes for the current face
         if (selectedFaceIndex !== null && selectedFaceIndex !== faceIndex) {
           setTempFaceFiles((prev) => ({
@@ -355,7 +372,7 @@ const CubicLevel = () => {
   
   // Method for viewing the cube data in a spreadsheet (xslx) format
   const handleXLSXClick = () => {
-    const faceLabels = ["WHO", "WHAT", "WHERE", "WHEN", "WHY", "HOW"];
+    const faceLabels = ["WHO", "WHAT", "WHEN", "WHERE", "WHY", "HOW"];
   
     // Prepare the table data
     const tableData = [
@@ -374,7 +391,7 @@ const CubicLevel = () => {
 
   // Method for downloading the spreadsheet
   const handleDownloadClick = async () => {
-    const faceLabels = ["WHO", "WHAT", "WHERE", "WHEN", "WHY", "HOW"];
+    const faceLabels = ["WHO", "WHAT", "WHEN", "WHERE", "WHY", "HOW"];
     const zip = new JSZip();
   
     // Step 1: Generate Transposed Data for the Excel File
@@ -563,18 +580,25 @@ const CubicLevel = () => {
         </div>
       )}
 
-      {/* Instructions (Modal) Pop-Up */}
+      {/* Instructions Modal */}
       {isIModalOpen && (
         <div className="i-modal-overlay">
           <div className="i-modal-content">
             <button className="close-button" onClick={toggleInstructionsModal}>
               X
             </button>
+            {/* Label of Cube Face */}
+            <h2 className="i-modal-face-label">
+              Additional Instructions : {labels[selectedFaceIndex]}
+              {/* Additional Instructions for the {labels[selectedFaceIndex]} Face */}
+            </h2>
+            {/* Instructions Text Box */}
             <textarea
-              readOnly
               className="instructions-textbox"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
+              value={instructionsData[selectedFaceIndex] || ""}
+              onChange={(e) =>
+                handleInstructionsChange(selectedFaceIndex, e.target.value)
+              }
               ref={(textarea) => {
                 if (textarea) {
                   textarea.style.height = "auto";
@@ -583,24 +607,23 @@ const CubicLevel = () => {
                     window.getComputedStyle(textarea).getPropertyValue("max-height"),
                     10
                   );
-            
-                  // Manage scroll bar
                   if (newHeight > maxHeight) {
                     textarea.style.height = `${maxHeight}px`;
-                    textarea.style.overflowY = "auto"; // Enable scroll bar
+                    textarea.style.overflowY = "auto";
                   } else {
                     textarea.style.height = `${newHeight}px`;
-                    textarea.style.overflowY = "hidden"; // Hide scroll bar
+                    textarea.style.overflowY = "hidden";
                   }
                 }
               }}
-              placeholder="None."
-              ></textarea>
+              placeholder={`Enter instructions for the ${labels[selectedFaceIndex]} face...`}
+              // placeholder={`None.`}
+            ></textarea>
           </div>
         </div>
       )}
     </div>
-  );     
+  );
 };
 
 export default CubicLevel;

@@ -229,7 +229,7 @@ html, body {
   font-size: 1rem;
   font-weight: bold;
   border: none;
-  padding: 8px 16px;
+  padding: 9px 16px !important;
   border-radius: 4px;
   cursor: pointer;
   text-align: center;
@@ -355,8 +355,8 @@ html, body {
 
 /* ADDITIONAL INSTRUCTIONS BUTTON */
 .instructions-button {
-  background-color: #28a745 !important;
-  color: white;
+  background-color: white !important;
+  color: black !important;
   /* font-weight: bold; */
   font-size: 1rem;
   border: none;
@@ -373,7 +373,8 @@ html, body {
 }
 
 .instructions-button:hover {
-  background-color: #218838 !important;
+  /* background-color: #e9e8e8 !important; */
+  box-shadow: 0px 10px 12px rgba(0, 0, 0, 0.2);
 }
 
 
@@ -393,7 +394,7 @@ html, body {
 
 .i-modal-content {
   background: white;
-  color: black;
+  color: black !important;
   padding: 45px;
   border-radius: 8px;
   width: 80%;
@@ -405,6 +406,14 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+}
+
+.i-modal-face-label {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-align: center;
+  color: black;
 }
 
 .instructions-textbox {
