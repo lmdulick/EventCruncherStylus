@@ -429,3 +429,26 @@ html, body {
   overflow-y: auto;
   box-sizing: border-box;
 }
+
+
+/* DEFAULT INSTRUCTIONS TEXT BOX */
+.di-textbox {
+  width: 100%;
+  height: 500px;
+  margin-bottom: 8px;
+  padding: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: none;
+  font-size: 1rem;
+  line-height: 1.5;
+  background-color: #d4fbb8;
+  color: #333;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.di-textbox:focus {
+  outline: none;
+  border-color: #007bff;
+  background-color: #fff;
+}

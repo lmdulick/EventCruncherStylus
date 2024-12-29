@@ -24,9 +24,18 @@ const CubicLevel = () => {
     5: "", // How
   });
 
+  // DI = default instructions text box
+  const [isDITextBoxVisible, setIsDITextBoxVisible] = useState(true);
+
+  // Toggle Default Instructions text box visibility
+  const toggleDITextBox = () => {
+    setIsDITextBoxVisible(!isDITextBoxVisible);
+  };
+
+
   // modal = UI element appearing on top of the main page 
   // X modal = excel spreadsheet modal
-  // I modal = instructions modal
+  // I modal = additional instructions modal
   const [isXModalOpen, setIsXModalOpen] = useState(false);
   const [spreadsheetData, setSpreadsheetData] = useState([]);
   const [isIModalOpen, setIsIModalOpen] = useState(false);
@@ -48,13 +57,18 @@ const CubicLevel = () => {
   
 
   useEffect(() => {
+    // Show the Default Instructions text box when the page first renders
+    setIsDITextBoxVisible(true);
+  }, []);
+
+  useEffect(() => {
     if (isIModalOpen) {
       const textarea = document.querySelector('.instructions-textbox');
 
       if (textarea) {
         textarea.addEventListener('input', function () {
-          this.style.height = 'auto'; // Reset the height
-          this.style.height = `${this.scrollHeight}px`; // Adjust to fit content
+          this.style.height = 'auto';
+          this.style.height = `${this.scrollHeight}px`;
         });
 
         // Cleanup event listener when the modal closes or component unmounts
@@ -66,7 +80,7 @@ const CubicLevel = () => {
         };
       }
     }
-  }, [isIModalOpen]); // Runs only when `isIModalOpen` changes
+  }, [isIModalOpen]);
 
   // For temporary file uploads
   useEffect(() => {
@@ -245,6 +259,9 @@ const CubicLevel = () => {
     // Reset temporary states
     setSelectedFaceIndex(null);
     setInputText("");
+
+    // Show the Default Instructions text box after saving
+    setIsDITextBoxVisible(true);
   };
   
 
@@ -441,7 +458,23 @@ const CubicLevel = () => {
     <div className="cubic-level">
       <h1 className="cubic-level-title">Cubic Level</h1>
       <div ref={containerRef} className="cubic-level-container"></div>
-  
+
+      {/* Default Instructions Text Box */}
+      {isDITextBoxVisible && (
+        <div className="text-input-overlay">
+          <h2 className="face-label"></h2>
+          <textarea
+            className="di-textbox"
+            readOnly
+            value={`Welcome to the cubic level! \n\nHere’s how to interact with the cube:
+• Spin the cube by clicking and dragging.
+• Click on a face to open the corresponding text box.
+• Use the "Insert Files" button to add files.
+• Click "Save" to store your changes.`}
+          />
+        </div>
+      )}
+
       {/* XLSX Button*/}
       <button
         className="xlsx-button"
