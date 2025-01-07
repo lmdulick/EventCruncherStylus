@@ -10,7 +10,7 @@ const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: 'mysql',
-    database: 'profilesdb'
+    database: 'ecsdb'
 });
 
 // Connect to the database
