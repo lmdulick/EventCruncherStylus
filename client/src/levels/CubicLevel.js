@@ -124,22 +124,22 @@ const CubicLevel = () => {
     // Render Cube Faces
     const materials = [
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/cube_faces/whereBB.jpg"), // WHERE face
+        map: textureLoader.load("/images/cube_faces/whereB.jpg"), // WHERE face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/cube_faces/whenBB.jpg"), // WHEN face
+        map: textureLoader.load("/images/cube_faces/whenB.jpg"), // WHEN face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/cube_faces/whyBB.jpg"), // WHY face
+        map: textureLoader.load("/images/cube_faces/whyB.jpg"), // WHY face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/cube_faces/howBB.jpg"), // HOW face
+        map: textureLoader.load("/images/cube_faces/howB.jpg"), // HOW face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/cube_faces/whoBB.jpg"), // WHO face
+        map: textureLoader.load("/images/cube_faces/whoB.jpg"), // WHO face
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/cube_faces/whatBB.jpg"), // WHAT face
+        map: textureLoader.load("/images/cube_faces/whatB.jpg"), // WHAT face
       }),
     ];
 
@@ -202,6 +202,7 @@ const CubicLevel = () => {
       }
     };
     
+    
     renderer.domElement.addEventListener("click", handleMouseClick);
 
     const animate = () => {
@@ -229,40 +230,78 @@ const CubicLevel = () => {
 
 
   // Method for handling saving data when user clicks "SAVE" button
+  // const handleSave = () => {
+  //   setFaceFiles((prev) => {
+  //     const updatedFaceFiles = { ...prev };
+  
+  //     Object.keys(tempFaceFiles).forEach((faceIndex) => {
+  //       const currentFiles = tempFaceFiles[faceIndex] || { saved: [], pending: [] };
+  
+  //       updatedFaceFiles[faceIndex] = {
+  //         saved: [
+  //           ...(currentFiles.saved || []),
+  //           ...(currentFiles.pending || []),
+  //         ],
+  //         pending: [],
+  //       };
+  //     });
+  
+  //     return updatedFaceFiles;
+  //   });
+  
+  //   // Save the text for the selected face
+  //   if (selectedFaceIndex !== null) {
+  //     setFaceTexts((prev) => ({
+  //       ...prev,
+  //       [selectedFaceIndex]: inputText || "",
+  //     }));
+  //   }
+  
+  //   // Reset temporary states
+  //   setSelectedFaceIndex(null);
+  //   setInputText("");
+
+  //   // Show the Default Instructions text box after saving
+  //   setIsDITextBoxVisible(true);
+  // };
   const handleSave = () => {
-    setFaceFiles((prev) => {
-      const updatedFaceFiles = { ...prev };
-  
-      Object.keys(tempFaceFiles).forEach((faceIndex) => {
-        const currentFiles = tempFaceFiles[faceIndex] || { saved: [], pending: [] };
-  
-        updatedFaceFiles[faceIndex] = {
-          saved: [
-            ...(currentFiles.saved || []),
-            ...(currentFiles.pending || []),
-          ],
-          pending: [],
-        };
-      });
-  
-      return updatedFaceFiles;
-    });
-  
-    // Save the text for the selected face
     if (selectedFaceIndex !== null) {
+      // Save files for the selected face only
+      setFaceFiles((prev) => ({
+        ...prev,
+        [selectedFaceIndex]: {
+          saved: [
+            ...(prev[selectedFaceIndex]?.saved || []),
+            ...(tempFaceFiles[selectedFaceIndex]?.pending || []),
+          ],
+          pending: [], // Clear pending files after saving
+        },
+      }));
+  
+      // Save the text for the selected face
       setFaceTexts((prev) => ({
         ...prev,
         [selectedFaceIndex]: inputText || "",
       }));
-    }
   
-    // Reset temporary states
-    setSelectedFaceIndex(null);
-    setInputText("");
-
-    // Show the Default Instructions text box after saving
-    setIsDITextBoxVisible(true);
+      // Clear temporary files for the selected face
+      setTempFaceFiles((prev) => ({
+        ...prev,
+        [selectedFaceIndex]: {
+          saved: prev[selectedFaceIndex]?.saved || [],
+          pending: [], // Ensure pending files are cleared after save
+        },
+      }));
+  
+      // Reset input text
+      setInputText("");
+  
+      // Optionally show default instructions after saving
+      setIsDITextBoxVisible(true);
+    }
   };
+  
+  
   
 
   // Method for handling uploading a file when user clicks "INSERT FILE" button
@@ -466,11 +505,15 @@ const CubicLevel = () => {
           <textarea
             className="di-textbox"
             readOnly
-            value={`Welcome to the cubic level! \n\nHere’s how to interact with the cube:
-• Spin the cube by clicking and dragging.
-• Click on a face to open the corresponding text box.
-• Use the "Insert Files" button to add files.
-• Click "Save" to store your changes.`}
+            value={`Welcome to the CUBIC LEVEL! \n\nHere’s how to interact with the cube:
+  • Spin the cube by clicking and dragging.
+  • Click on a face to open the corresponding text box.
+  • Use the "Insert Files" button to add files.
+  • Click "Save" to store your changes.
+  • Click the "Excel" button in the bottom right corner to view 
+  the cubic data in a spreadsheet format.
+  • Click the "Download" button in the bottom right corner to 
+  download the cubic data and uploaded files.`}
           />
         </div>
       )}

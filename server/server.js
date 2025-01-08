@@ -1,9 +1,13 @@
 const express = require('express');
 const mysql = require('mysql2');
 const bcrypt = require('bcryptjs');
+const path = require('path');
 const app = express();
 
 app.use(express.json()); // Enable JSON parsing middleware
+
+// Serve static files from the "public" directory
+app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
 // MySQL connection
 const db = mysql.createConnection({
