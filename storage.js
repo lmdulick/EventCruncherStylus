@@ -1,4 +1,4 @@
-// working on red outline on selected face
+// no red highlight on selected box
 
 import React, { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
@@ -26,10 +26,6 @@ const CubicLevel = () => {
     5: "", // How
   });
 
-  const [activeFaceIndex, setActiveFaceIndex] = useState(null);
-  const textureLoader = new THREE.TextureLoader(); // Move this outside useEffect
-  const materials = []; // Initialize materials as an empty array
-
   // DI = default instructions text box
   const [isDITextBoxVisible, setIsDITextBoxVisible] = useState(true);
 
@@ -38,7 +34,6 @@ const CubicLevel = () => {
     setIsDITextBoxVisible(!isDITextBoxVisible);
   };
 
-
   // modal = UI element appearing on top of the main page 
   // X modal = excel spreadsheet modal
   // I modal = additional instructions modal
@@ -46,12 +41,10 @@ const CubicLevel = () => {
   const [spreadsheetData, setSpreadsheetData] = useState([]);
   const [isIModalOpen, setIsIModalOpen] = useState(false);
 
-
-  // Toggle between the Instructions Modal and the UI
+  // Toggle between the Additional Instructions Modal and the UI
   const toggleInstructionsModal = () => {
     setIsIModalOpen(!isIModalOpen);
   };
-
 
   // Update instructions for the selected face
   const handleInstructionsChange = (faceIndex, value) => {
@@ -61,9 +54,8 @@ const CubicLevel = () => {
     }));
   };
   
-
+  // Show the Default Instructions text box when the page first renders
   useEffect(() => {
-    // Show the Default Instructions text box when the page first renders
     setIsDITextBoxVisible(true);
   }, []);
 
@@ -77,7 +69,6 @@ const CubicLevel = () => {
           this.style.height = `${this.scrollHeight}px`;
         });
 
-        // Cleanup event listener when the modal closes or component unmounts
         return () => {
           textarea.removeEventListener('input', function () {
             this.style.height = 'auto';
@@ -125,9 +116,10 @@ const CubicLevel = () => {
 
     // Create Cube
     const geometry = new THREE.BoxGeometry(3, 3, 3);
+    const textureLoader = new THREE.TextureLoader();
 
-    // Assign textures to the materials array
-    materials.push(
+    // Render Cube Faces
+    const materials = [
       new THREE.MeshBasicMaterial({
         map: textureLoader.load("/images/cube_faces/whereB.jpg"), // WHERE face
       }),
@@ -145,8 +137,8 @@ const CubicLevel = () => {
       }),
       new THREE.MeshBasicMaterial({
         map: textureLoader.load("/images/cube_faces/whatB.jpg"), // WHAT face
-      })
-    );
+      }),
+    ];
 
     const cube = new THREE.Mesh(geometry, materials);
     scene.add(cube);
@@ -160,12 +152,8 @@ const CubicLevel = () => {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
-    const faceMap = [3, 2, 4, 5, 0, 1];
-
     // Method for handling a mouse click on the cube
     const handleMouseClick = (event) => {
-      const labels = ["Where", "When", "Why", "How", "Who", "What"];
-
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -174,38 +162,42 @@ const CubicLevel = () => {
       const intersects = raycaster.intersectObject(cube);
     
       if (intersects.length > 0) {
+        const faceMap = [3, 2, 4, 5, 0, 1];
+        // [0] : Where (val: 3)
+        // [1] : When (val: 2)
+        // [2] : Why (val: 4)
+        // [3] : How (val: 5)
+        // [4] : Who (val: 0)
+        // [5] : What (val: 1)
+
         const triangleIndex = Math.floor(intersects[0].faceIndex / 2);
-        const faceIndex = faceMap[triangleIndex]; // Map triangle index to face index
-    
-        console.log("Triangle Index:", triangleIndex);
-        console.log("Mapped Face Index:", faceIndex);
-    
-        if (faceIndex >= 0 && faceIndex < materials.length) {
-          // Reset the previous face texture
-          if (activeFaceIndex !== null && activeFaceIndex !== faceIndex) {
-            materials[activeFaceIndex].map = textureLoader.load(
-              `/images/cube_faces/${labels[activeFaceIndex].toLowerCase()}B.jpg`
-            );
-          }
-    
-          // Apply the red texture to the clicked face
-          materials[faceIndex].map = textureLoader.load(
-            `/images/cube_faces/${labels[faceIndex].toLowerCase()}R.jpg`
-          );
-    
-          // Update state
-          setActiveFaceIndex(faceIndex);
-          setSelectedFaceIndex(faceIndex);
-          setInputText(faceTexts[faceIndex] || "");
-        } else {
-          console.error(`Invalid face index: ${faceIndex}`);
+        const faceIndex = faceMap[triangleIndex];
+
+        // Discard unsaved changes for the current face
+        if (selectedFaceIndex !== null && selectedFaceIndex !== faceIndex) {
+          setTempFaceFiles((prev) => ({
+            ...prev,
+            [selectedFaceIndex]: {
+              saved: prev[selectedFaceIndex]?.saved || [],
+              pending: [], // Discard unsaved files
+            },
+          }));
         }
+    
+        // Set tempFaceFiles for the new face
+        setTempFaceFiles((prev) => ({
+          ...prev,
+          [faceIndex]: {
+            saved: faceFiles[faceIndex]?.saved || [],
+            pending: [],
+          },
+        }));
+    
+        // Switch to the new face
+        setSelectedFaceIndex(faceIndex);
+        setInputText(faceTexts[faceIndex] || "");
       }
     };
-    
-    
-    
-  
     
     renderer.domElement.addEventListener("click", handleMouseClick);
 
@@ -235,49 +227,44 @@ const CubicLevel = () => {
 
   // Method for handling saving data when user clicks "SAVE" button
   const handleSave = () => {
-    if (activeFaceIndex !== null && materials[activeFaceIndex]) {
-      // Reset the active face texture
-      materials[activeFaceIndex].map = textureLoader.load(
-        `/images/cube_faces/${labels[activeFaceIndex].toLowerCase()}B.jpg`
-      );
-    }
-  
-    // Reset the active face and clear temporary states
-    setActiveFaceIndex(null);
-    setSelectedFaceIndex(null);
-    setInputText("");
-  
-    // Save the changes for the selected face
-    setFaceFiles((prev) => {
-      const updatedFaceFiles = { ...prev };
-  
-      Object.keys(tempFaceFiles).forEach((faceIndex) => {
-        const currentFiles = tempFaceFiles[faceIndex] || { saved: [], pending: [] };
-  
-        updatedFaceFiles[faceIndex] = {
+    if (selectedFaceIndex !== null) {
+      setIsDITextBoxVisible(false);
+      setTimeout(() => setIsDITextBoxVisible(true), 0);
+      // Save files for the selected face only
+      setFaceFiles((prev) => ({
+        ...prev,
+        [selectedFaceIndex]: {
           saved: [
-            ...(currentFiles.saved || []),
-            ...(currentFiles.pending || []),
+            ...(prev[selectedFaceIndex]?.saved || []),
+            ...(tempFaceFiles[selectedFaceIndex]?.pending || []),
           ],
           pending: [],
-        };
-      });
+        },
+      }));
   
-      return updatedFaceFiles;
-    });
-  
-    if (selectedFaceIndex !== null) {
+      // Save the text for the selected face
       setFaceTexts((prev) => ({
         ...prev,
         [selectedFaceIndex]: inputText || "",
       }));
+  
+      // Clear temporary files for the selected face
+      setTempFaceFiles((prev) => ({
+        ...prev,
+        [selectedFaceIndex]: {
+          saved: prev[selectedFaceIndex]?.saved || [],
+          pending: [],
+        },
+      }));
+  
+      // Reset to no cube face selected
+      setSelectedFaceIndex(null);
+
+      // Return to Default Instructions Textbox
+      setIsDITextBoxVisible(true);
     }
-  
-    // Show the Default Instructions text box after saving
-    setIsDITextBoxVisible(true);
   };
- 
-  
+    
 
   // Method for handling uploading a file when user clicks "INSERT FILE" button
   const handleFileUpload = (event) => {

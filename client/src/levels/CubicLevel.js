@@ -6,16 +6,26 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import "./CubicLevel.css";
 
-const labels = ["Who", "What", "When", "Where", "Why", "How"];
 
 const CubicLevel = () => {
   const containerRef = useRef(null);
+
+  // Mouse Indexing
   const [selectedFaceIndex, setSelectedFaceIndex] = useState(null);
+  const [activeFaceIndex, setActiveFaceIndex] = useState(null);
+
+  // Data Text Box & Files
   const [faceTexts, setFaceTexts] = useState({});
   const [inputText, setInputText] = useState("");
   const [faceFiles, setFaceFiles] = useState({}); 
   const [tempFaceFiles, setTempFaceFiles] = useState({});
-  const [instructionsData, setInstructionsData] = useState({
+  
+  // DI = default instructions text box
+  const [isDITextBoxVisible, setIsDITextBoxVisible] = useState(true);
+
+  // CI modal = criteria instructions modal
+  const [isCIModalOpen, setIsCIModalOpen] = useState(false);
+  const [criteriaInstructions, setCriteriaInstructions] = useState({
     0: "", // Who
     1: "", // What
     2: "", // When
@@ -24,42 +34,43 @@ const CubicLevel = () => {
     5: "", // How
   });
 
-  // DI = default instructions text box
-  const [isDITextBoxVisible, setIsDITextBoxVisible] = useState(true);
+  // XLSX modal = excel spreadsheet modal
+  const [isXlsxModalOpen, setIsXlsxModalOpen] = useState(false);
+  const [spreadsheetData, setSpreadsheetData] = useState([]);
+
+  // Global Variables
+  const labels = ["Who", "What", "When", "Where", "Why", "How"];
+  const textureLoader = new THREE.TextureLoader();
+  const materials = [];
+
 
   // Toggle Default Instructions text box visibility
   const toggleDITextBox = () => {
     setIsDITextBoxVisible(!isDITextBoxVisible);
   };
 
-  // modal = UI element appearing on top of the main page 
-  // X modal = excel spreadsheet modal
-  // I modal = additional instructions modal
-  const [isXModalOpen, setIsXModalOpen] = useState(false);
-  const [spreadsheetData, setSpreadsheetData] = useState([]);
-  const [isIModalOpen, setIsIModalOpen] = useState(false);
-
-  // Toggle between the Additional Instructions Modal and the UI
-  const toggleInstructionsModal = () => {
-    setIsIModalOpen(!isIModalOpen);
-  };
-
-  // Update instructions for the selected face
-  const handleInstructionsChange = (faceIndex, value) => {
-    setInstructionsData((prev) => ({
-      ...prev,
-      [faceIndex]: value,
-    }));
-  };
-  
   // Show the Default Instructions text box when the page first renders
   useEffect(() => {
     setIsDITextBoxVisible(true);
   }, []);
 
+  // Toggle between the Criteria Instructions Modal and the UI
+  const toggleCIModal = () => {
+    setIsCIModalOpen(!isCIModalOpen);
+  };
+
+  // Update Criteria Instructions for the selected face
+  const handleCIChange = (faceIndex, value) => {
+    setCriteriaInstructions((prev) => ({
+      ...prev,
+      [faceIndex]: value,
+    }));
+  };
+
+  // Adjust the size of the Criteria Instructions modal
   useEffect(() => {
-    if (isIModalOpen) {
-      const textarea = document.querySelector('.instructions-textbox');
+    if (isCIModalOpen) {
+      const textarea = document.querySelector('.ci-textbox');
 
       if (textarea) {
         textarea.addEventListener('input', function () {
@@ -67,6 +78,7 @@ const CubicLevel = () => {
           this.style.height = `${this.scrollHeight}px`;
         });
 
+        // Cleanup event listener when the modal closes or component unmounts
         return () => {
           textarea.removeEventListener('input', function () {
             this.style.height = 'auto';
@@ -75,9 +87,9 @@ const CubicLevel = () => {
         };
       }
     }
-  }, [isIModalOpen]);
+  }, [isCIModalOpen]);
 
-  // For temporary file uploads
+  // For temporary file uploads (before "Save" is clicked)
   useEffect(() => {
     if (selectedFaceIndex !== null) {
       setTempFaceFiles((prev) => ({
@@ -114,30 +126,29 @@ const CubicLevel = () => {
 
     // Create Cube
     const geometry = new THREE.BoxGeometry(3, 3, 3);
-    const textureLoader = new THREE.TextureLoader();
 
-    // Render Cube Faces
-    const materials = [
+    // Assign textures to the materials array
+    materials.push(
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/cube_faces/whereB.jpg"), // WHERE face
+          map: textureLoader.load("/images/cube_faces/whoB.jpg"),
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/cube_faces/whenB.jpg"), // WHEN face
+          map: textureLoader.load("/images/cube_faces/whatB.jpg"),
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/cube_faces/whyB.jpg"), // WHY face
+          map: textureLoader.load("/images/cube_faces/whenB.jpg"),
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/cube_faces/howB.jpg"), // HOW face
+          map: textureLoader.load("/images/cube_faces/whereB.jpg"),
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/cube_faces/whoB.jpg"), // WHO face
+          map: textureLoader.load("/images/cube_faces/whyB.jpg"),
       }),
       new THREE.MeshBasicMaterial({
-        map: textureLoader.load("/images/cube_faces/whatB.jpg"), // WHAT face
-      }),
-    ];
-
+          map: textureLoader.load("/images/cube_faces/howB.jpg"),
+      })
+    );
+  
     const cube = new THREE.Mesh(geometry, materials);
     scene.add(cube);
 
@@ -150,50 +161,51 @@ const CubicLevel = () => {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
+    // Map for Cube Faces
+    const faceMap = [0, 1, 2, 3, 4, 5];
+
+    // Method for resetting a face from red -> black
+    const resetFaceTextures = (currentFaceIndex) => {
+      materials.forEach((material, index) => {
+          if (index !== currentFaceIndex && labels[index]) {
+              const defaultLabel = labels[index].toLowerCase();
+              material.map = textureLoader.load(`/images/cube_faces/${defaultLabel}B.jpg`);
+              material.needsUpdate = true;
+          }
+      });
+    };
+
     // Method for handling a mouse click on the cube
     const handleMouseClick = (event) => {
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-    
+
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObject(cube);
-    
+
       if (intersects.length > 0) {
-        const faceMap = [3, 2, 4, 5, 0, 1];
-        // [0] : Where (val: 3)
-        // [1] : When (val: 2)
-        // [2] : Why (val: 4)
-        // [3] : How (val: 5)
-        // [4] : Who (val: 0)
-        // [5] : What (val: 1)
+          const triangleIndex = Math.floor(intersects[0].faceIndex / 2);
+          const faceIndex = faceMap[triangleIndex]; // Map triangle index to face index
 
-        const triangleIndex = Math.floor(intersects[0].faceIndex / 2);
-        const faceIndex = faceMap[triangleIndex];
+          if (faceIndex >= 0 && faceIndex < materials.length) {
+              // Reset all other faces to their default textures
+              resetFaceTextures(faceIndex);
 
-        // Discard unsaved changes for the current face
-        if (selectedFaceIndex !== null && selectedFaceIndex !== faceIndex) {
-          setTempFaceFiles((prev) => ({
-            ...prev,
-            [selectedFaceIndex]: {
-              saved: prev[selectedFaceIndex]?.saved || [],
-              pending: [], // Discard unsaved files
-            },
-          }));
-        }
-    
-        // Set tempFaceFiles for the new face
-        setTempFaceFiles((prev) => ({
-          ...prev,
-          [faceIndex]: {
-            saved: faceFiles[faceIndex]?.saved || [],
-            pending: [],
-          },
-        }));
-    
-        // Switch to the new face
-        setSelectedFaceIndex(faceIndex);
-        setInputText(faceTexts[faceIndex] || "");
+              // Apply the red texture to the newly selected face
+              const currentLabel = labels[faceIndex].toLowerCase();
+              materials[faceIndex].map = textureLoader.load(
+                  `/images/cube_faces/${currentLabel}R.jpg`
+              );
+              materials[faceIndex].needsUpdate = true;
+
+              // Update state
+              setActiveFaceIndex(faceIndex);
+              setSelectedFaceIndex(faceIndex);
+              setInputText(faceTexts[faceIndex] || "");
+          } else {
+              console.error(`Invalid face index: ${faceIndex}`);
+          }
       }
     };
     
@@ -225,44 +237,53 @@ const CubicLevel = () => {
 
   // Method for handling saving data when user clicks "SAVE" button
   const handleSave = () => {
-    if (selectedFaceIndex !== null) {
-      setIsDITextBoxVisible(false);
-      setTimeout(() => setIsDITextBoxVisible(true), 0);
-      // Save files for the selected face only
-      setFaceFiles((prev) => ({
-        ...prev,
-        [selectedFaceIndex]: {
-          saved: [
-            ...(prev[selectedFaceIndex]?.saved || []),
-            ...(tempFaceFiles[selectedFaceIndex]?.pending || []),
-          ],
-          pending: [],
-        },
-      }));
-  
-      // Save the text for the selected face
-      setFaceTexts((prev) => ({
-        ...prev,
-        [selectedFaceIndex]: inputText || "",
-      }));
-  
-      // Clear temporary files for the selected face
-      setTempFaceFiles((prev) => ({
-        ...prev,
-        [selectedFaceIndex]: {
-          saved: prev[selectedFaceIndex]?.saved || [],
-          pending: [],
-        },
-      }));
-  
-      // Reset to no cube face selected
-      setSelectedFaceIndex(null);
-
-      // Return to Default Instructions Textbox
-      setIsDITextBoxVisible(true);
+    if (activeFaceIndex !== null && materials[activeFaceIndex]) {
+        // Reset the active face texture
+        materials[activeFaceIndex].map = textureLoader.load(
+            `/images/cube_faces/${labels[activeFaceIndex].toLowerCase()}B.jpg`
+        );
+        materials[activeFaceIndex].needsUpdate = true;
     }
-  };
-    
+
+    // Save the changes for the selected face
+    setFaceFiles((prev) => {
+        const updatedFaceFiles = { ...prev };
+
+        // Update only the currently selected face
+        if (selectedFaceIndex !== null) {
+            const currentFiles = tempFaceFiles[selectedFaceIndex] || { saved: [], pending: [] };
+            updatedFaceFiles[selectedFaceIndex] = {
+                saved: [
+                    ...(currentFiles.saved || []), // Retain previously saved files
+                    ...(currentFiles.pending || []), // Add pending files
+                ],
+                pending: [], // Clear pending files after saving
+            };
+        }
+
+        return updatedFaceFiles;
+    });
+
+    if (selectedFaceIndex !== null) {
+        setFaceTexts((prev) => ({
+            ...prev,
+            [selectedFaceIndex]: inputText || "",
+        }));
+    }
+
+    // Clear temp state and reset text input
+    setTempFaceFiles((prev) => ({
+        ...prev,
+        [selectedFaceIndex]: { saved: [], pending: [] },
+    }));
+    setInputText("");
+    setActiveFaceIndex(null);
+    setSelectedFaceIndex(null);
+
+    // Optionally, show default instructions
+    setIsDITextBoxVisible(true);
+};
+
 
   // Method for handling uploading a file when user clicks "INSERT FILE" button
   const handleFileUpload = (event) => {
@@ -401,7 +422,7 @@ const CubicLevel = () => {
     ];
   
     setSpreadsheetData(tableData);
-    setIsXModalOpen(true);
+    setIsXlsxModalOpen(true);
   };
   
 
@@ -490,11 +511,11 @@ const CubicLevel = () => {
         />
       </button>
 
-      {/* Spreadsheet (Modal) Pop-Up */}
-      {isXModalOpen && (
+      {/* XLSX Spreadsheet (Modal) Pop-Up */}
+      {isXlsxModalOpen && (
         <div className="ssh-modal-overlay">
           <div className="ssh-modal-content">
-            <button className="close-button" onClick={() => setIsXModalOpen(false)}>
+            <button className="close-button" onClick={() => setIsXlsxModalOpen(false)}>
               X
             </button>
             <table className="spreadsheet-table">
@@ -542,8 +563,8 @@ const CubicLevel = () => {
       {/* Text Box */}
       {selectedFaceIndex !== null && (
         <div className="text-input-overlay">
-          { /* Instructions Button */}
-          <button className="instructions-button" onClick={toggleInstructionsModal}>
+          { /* Criteria Instructions Button */}
+          <button className="ci-button" onClick={toggleCIModal}>
             ✱
           </button>
 
@@ -559,29 +580,29 @@ const CubicLevel = () => {
             
             <div className="file-list">
               {/* Saved Files */}
-              {tempFaceFiles[selectedFaceIndex]?.saved.map((file, index) => (
-                <div key={`saved-${index}`} className="file-item">
-                  <button
-                    className="delete-file-button"
-                    onClick={() => handleDeleteFile(selectedFaceIndex, index, "saved")}
-                  >
-                    X
-                  </button>
-                  <span>{file.name}</span>
-                </div>
+              {faceFiles[selectedFaceIndex]?.saved.map((file, index) => (
+                  <div key={`saved-${index}`} className="file-item">
+                      <button
+                          className="delete-file-button"
+                          onClick={() => handleDeleteFile(selectedFaceIndex, index, "saved")}
+                      >
+                          X
+                      </button>
+                      <span>{file.name}</span>
+                  </div>
               ))}
 
-              {/* Unsaved Files */}
+              {/* Unsaved (Pending) Files */}
               {tempFaceFiles[selectedFaceIndex]?.pending.map((file, index) => (
-                <div key={`pending-${index}`} className="file-item pending">
-                  <button
-                    className="delete-file-button"
-                    onClick={() => handleDeleteFile(selectedFaceIndex, index, "pending")}
-                  >
-                    X
-                  </button>
-                  <span>{file.name} (unsaved)</span>
-                </div>
+                  <div key={`pending-${index}`} className="file-item pending">
+                      <button
+                          className="delete-file-button"
+                          onClick={() => handleDeleteFile(selectedFaceIndex, index, "pending")}
+                      >
+                          X
+                      </button>
+                      <span>{file.name} (unsaved)</span>
+                  </div>
               ))}
             </div>
           </div>
@@ -616,24 +637,24 @@ const CubicLevel = () => {
         </div>
       )}
 
-      {/* Instructions Modal */}
-      {isIModalOpen && (
-        <div className="i-modal-overlay">
-          <div className="i-modal-content">
-            <button className="close-button" onClick={toggleInstructionsModal}>
+      {/* Criteria Instructions Modal */}
+      {isCIModalOpen && (
+        <div className="ci-modal-overlay">
+          <div className="ci-modal-content">
+            <button className="close-button" onClick={toggleCIModal}>
               X
             </button>
             {/* Label of Cube Face */}
-            <h2 className="i-modal-face-label">
-              Additional Instructions : {labels[selectedFaceIndex]}
-              {/* Additional Instructions for the {labels[selectedFaceIndex]} Face */}
+            <h2 className="ci-modal-face-label">
+              Criteria Instructions : {labels[selectedFaceIndex]}
+              {/* Criteria Instructions for the {labels[selectedFaceIndex]} Face */}
             </h2>
-            {/* Instructions Text Box */}
+            {/* Criteria Instructions Text Box */}
             <textarea
-              className="instructions-textbox"
-              value={instructionsData[selectedFaceIndex] || ""}
+              className="ci-textbox"
+              value={criteriaInstructions[selectedFaceIndex] || ""}
               onChange={(e) =>
-                handleInstructionsChange(selectedFaceIndex, e.target.value)
+                handleCIChange(selectedFaceIndex, e.target.value)
               }
               ref={(textarea) => {
                 if (textarea) {
@@ -652,7 +673,7 @@ const CubicLevel = () => {
                   }
                 }
               }}
-              placeholder={`Enter instructions for the ${labels[selectedFaceIndex]} face...`}
+              placeholder={`Enter criteria instructions for the ${labels[selectedFaceIndex]} face...`}
               // placeholder={`None.`}
             ></textarea>
           </div>
