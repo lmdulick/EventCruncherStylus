@@ -32,7 +32,6 @@ const CubicLevel = () => {
     setIsDITextBoxVisible(!isDITextBoxVisible);
   };
 
-
   // modal = UI element appearing on top of the main page 
   // X modal = excel spreadsheet modal
   // I modal = additional instructions modal
@@ -40,12 +39,10 @@ const CubicLevel = () => {
   const [spreadsheetData, setSpreadsheetData] = useState([]);
   const [isIModalOpen, setIsIModalOpen] = useState(false);
 
-
-  // Toggle between the Instructions Modal and the UI
+  // Toggle between the Additional Instructions Modal and the UI
   const toggleInstructionsModal = () => {
     setIsIModalOpen(!isIModalOpen);
   };
-
 
   // Update instructions for the selected face
   const handleInstructionsChange = (faceIndex, value) => {
@@ -55,9 +52,8 @@ const CubicLevel = () => {
     }));
   };
   
-
+  // Show the Default Instructions text box when the page first renders
   useEffect(() => {
-    // Show the Default Instructions text box when the page first renders
     setIsDITextBoxVisible(true);
   }, []);
 
@@ -71,7 +67,6 @@ const CubicLevel = () => {
           this.style.height = `${this.scrollHeight}px`;
         });
 
-        // Cleanup event listener when the modal closes or component unmounts
         return () => {
           textarea.removeEventListener('input', function () {
             this.style.height = 'auto';
@@ -202,7 +197,6 @@ const CubicLevel = () => {
       }
     };
     
-    
     renderer.domElement.addEventListener("click", handleMouseClick);
 
     const animate = () => {
@@ -230,42 +224,10 @@ const CubicLevel = () => {
 
 
   // Method for handling saving data when user clicks "SAVE" button
-  // const handleSave = () => {
-  //   setFaceFiles((prev) => {
-  //     const updatedFaceFiles = { ...prev };
-  
-  //     Object.keys(tempFaceFiles).forEach((faceIndex) => {
-  //       const currentFiles = tempFaceFiles[faceIndex] || { saved: [], pending: [] };
-  
-  //       updatedFaceFiles[faceIndex] = {
-  //         saved: [
-  //           ...(currentFiles.saved || []),
-  //           ...(currentFiles.pending || []),
-  //         ],
-  //         pending: [],
-  //       };
-  //     });
-  
-  //     return updatedFaceFiles;
-  //   });
-  
-  //   // Save the text for the selected face
-  //   if (selectedFaceIndex !== null) {
-  //     setFaceTexts((prev) => ({
-  //       ...prev,
-  //       [selectedFaceIndex]: inputText || "",
-  //     }));
-  //   }
-  
-  //   // Reset temporary states
-  //   setSelectedFaceIndex(null);
-  //   setInputText("");
-
-  //   // Show the Default Instructions text box after saving
-  //   setIsDITextBoxVisible(true);
-  // };
   const handleSave = () => {
     if (selectedFaceIndex !== null) {
+      setIsDITextBoxVisible(false);
+      setTimeout(() => setIsDITextBoxVisible(true), 0);
       // Save files for the selected face only
       setFaceFiles((prev) => ({
         ...prev,
@@ -274,7 +236,7 @@ const CubicLevel = () => {
             ...(prev[selectedFaceIndex]?.saved || []),
             ...(tempFaceFiles[selectedFaceIndex]?.pending || []),
           ],
-          pending: [], // Clear pending files after saving
+          pending: [],
         },
       }));
   
@@ -289,20 +251,18 @@ const CubicLevel = () => {
         ...prev,
         [selectedFaceIndex]: {
           saved: prev[selectedFaceIndex]?.saved || [],
-          pending: [], // Ensure pending files are cleared after save
+          pending: [],
         },
       }));
   
-      // Reset input text
-      setInputText("");
-  
-      // Optionally show default instructions after saving
+      // Reset to no cube face selected
+      setSelectedFaceIndex(null);
+
+      // Return to Default Instructions Textbox
       setIsDITextBoxVisible(true);
     }
   };
-  
-  
-  
+    
 
   // Method for handling uploading a file when user clicks "INSERT FILE" button
   const handleFileUpload = (event) => {
