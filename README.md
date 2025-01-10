@@ -74,12 +74,35 @@ mysql -u root -p
 ```
 
 ```shell
-USE profilesdb;
+SHOW DATABASES;
+```
+
+```shell
+USE ecsdb;
 ```
 
 ```shell
 SHOW TABLES;
 ```
+
+```shell
+USE profiles;
+```
+* MySQL DB for storing profile data (firstname, lastname, email, username, password)
+
+```shell
+SELECT * FROM profiles;
+```
+
+```shell
+USE avdata;
+```
+* MySQL DB for storing AV-Scene data
+
+```shell
+USE criteria;
+```
+* MySQL DB for storing criteria instructions specific to a certain face
 
 ```shell
 EXIT;
