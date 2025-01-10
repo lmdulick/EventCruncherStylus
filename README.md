@@ -91,6 +91,10 @@ USE profiles;
 * MySQL DB for storing profile data (firstname, lastname, email, username, password)
 
 ```shell
+DESCRIBE profiles;
+```
+
+```shell
 SELECT * FROM profiles;
 ```
 
