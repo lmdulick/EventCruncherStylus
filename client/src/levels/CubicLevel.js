@@ -78,7 +78,6 @@ const CubicLevel = () => {
           this.style.height = `${this.scrollHeight}px`;
         });
 
-        // Cleanup event listener when the modal closes or component unmounts
         return () => {
           textarea.removeEventListener('input', function () {
             this.style.height = 'auto';
@@ -89,7 +88,7 @@ const CubicLevel = () => {
     }
   }, [isCIModalOpen]);
 
-  // For temporary file uploads (before "Save" is clicked)
+  // Store temporary file uploads (before "Save" is clicked)
   useEffect(() => {
     if (selectedFaceIndex !== null) {
       setTempFaceFiles((prev) => ({
@@ -282,7 +281,7 @@ const CubicLevel = () => {
 
     // Optionally, show default instructions
     setIsDITextBoxVisible(true);
-};
+  };
 
 
   // Method for handling uploading a file when user clicks "INSERT FILE" button
@@ -326,7 +325,7 @@ const CubicLevel = () => {
       };
     });
   
-    // Optionally update the text box to remove the file name bullet point
+    // Update the text box to remove the file name bullet point
     setInputText((prevText) => {
       const fileNameToRemove =
         type === "saved"
@@ -399,7 +398,7 @@ const CubicLevel = () => {
   
       setInputText(newText);
   
-      // Adjust cursor position after '• '
+      // Adjust cursor position after '•'
       setTimeout(() => {
         textarea.selectionStart = textarea.selectionEnd = start + 3;
       }, 0);
