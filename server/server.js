@@ -33,7 +33,6 @@ db.connect((err) => {
     console.log('Connected to MySQL Database');
 });
 
-
 // Insert a new account into the profiles DB
 app.post('/api/users', async (req, res) => {
     const { username, password } = req.body;
@@ -43,26 +42,67 @@ app.post('/api/users', async (req, res) => {
     }
 
     try {
-        // Encrypt the password for security
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Insert the new student into the profiles table
-        const query = 'INSERT INTO profiles (username, password) VALUES (?, ?)';
-        db.query(query, [username, hashedPassword], (err, results) => {
+        // Check if the username already exists in the profiles table
+        const checkQuery = 'SELECT COUNT(*) AS count FROM profiles WHERE username = ?';
+        db.query(checkQuery, [username], async (err, results) => {
             if (err) {
-                if (err.code === 'ER_DUP_ENTRY') {
-                    return res.status(400).json({ error: 'Username already exists' });
-                }
-                console.error('Error inserting into profiles:', err.message);
+                console.error('Error checking for existing username:', err.message);
                 return res.status(500).json({ error: 'Database error' });
             }
 
-            res.status(201).json({ message: 'User created successfully', userId: results.insertId });
+            if (results[0].count > 0) {
+                // Username already exists
+                return res.status(400).json({ error: 'Username already exists' });
+            }
+
+            // Encrypt the password for security
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            // Insert the new user into the profiles table
+            const insertQuery = 'INSERT INTO profiles (username, password) VALUES (?, ?)';
+            db.query(insertQuery, [username, hashedPassword], (err, results) => {
+                if (err) {
+                    console.error('Error inserting into profiles:', err.message);
+                    return res.status(500).json({ error: 'Database error' });
+                }
+
+                res.status(201).json({ message: 'User created successfully', userId: results.insertId });
+            });
         });
     } catch (error) {
         console.error('Error creating user:', error);
         res.status(500).json({ error: 'Server error' });
     }
+});
+
+// Validate username/password combo on Login page
+app.post('/api/login', (req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    const query = 'SELECT password FROM profiles WHERE username = ?';
+    db.query(query, [username], async (err, results) => {
+        if (err) {
+            console.error('Error querying profiles:', err.message);
+            return res.status(500).json({ error: 'Database error' });
+        }
+
+        if (results.length === 0) {
+            return res.status(401).json({ error: 'Invalid username or password' });
+        }
+
+        const hashedPassword = results[0].password;
+
+        const isMatch = await bcrypt.compare(password, hashedPassword);
+        if (isMatch) {
+            return res.status(200).json({ message: 'Login successful' });
+        } else {
+            return res.status(401).json({ error: 'Invalid username or password' });
+        }
+    });
 });
 
 

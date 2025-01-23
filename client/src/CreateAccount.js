@@ -16,6 +16,8 @@ function CreateAccount() {
   const navigate = useNavigate();
   //const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [usernameError, setUsernameError] = useState('');
+
 
   const makeAPICall = async () => {
     try {
@@ -53,6 +55,7 @@ function CreateAccount() {
 
     // Reset the error states each time the form is submitted
     //setEmailError('');
+    setUsernameError('');
     setPasswordError('');
 
     // Check if the email ends with "@ufl.edu"
@@ -88,7 +91,12 @@ function CreateAccount() {
           navigate('/root');
       } else {
           const errorData = await response.json();
-          console.error('Error creating account:', errorData.error);
+
+          if (errorData.error === 'Username already exists') {
+            setUsernameError('This username is already taken. Please choose another one.');
+          } else {
+              console.error('Error creating account:', errorData.error);
+          }
       }
   } catch (error) {
       console.error('Error submitting form:', error);
@@ -139,6 +147,8 @@ function CreateAccount() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
+          {usernameError && <div className="error-message">{usernameError}</div>}
+
           <input
             type="password"
             id="password"

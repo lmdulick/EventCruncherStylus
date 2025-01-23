@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-//import MainPage from './MainPage';
 import logo from './ECS_logo.png'; 
 import './Login.css'; 
 
@@ -11,18 +10,44 @@ function Login() {
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (event) => {
     event.preventDefault();
-  }
+
+    try {
+      const response = await fetch('http://localhost:4000/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
   
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
+      if (response.ok) {
+        navigate('/root');
+      } else {
+        // Display error pop-up
+        setShowPopup(true);
+        
+        // Hide the pop-up after 3 seconds
+        setTimeout(() => {
+          setShowPopup(false);
+        }, 3000); 
+      }
+    } catch (error) {
+      console.error('Error logging in:', error);
+      setErrorMessage('An error occurred. Please try again.');
+    }
+  }
 
   return (
     <div className="login-container">
+      {showPopup && (
+        <div className="popup-notification">
+          <div className="popup-path">localhost:3000</div>
+          <div className="popup-message">Invalid username or password</div>
+        </div>
+      )}
       <div className="login-content">
         <img src={logo} alt="ECS Logo" className="login-logo" />
         <form onSubmit={handleLogin} className="login-form">
@@ -47,12 +72,6 @@ function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <span
-              className="password-toggle"
-              onClick={togglePasswordVisibility}
-            >
-              {showPassword ? 'Hide' : 'Show'}
-            </span>
           </div>
           {errorMessage && <div className="error-message">{errorMessage}</div>}
           <button type="submit" className="login-btn">Login</button>
@@ -61,6 +80,7 @@ function Login() {
         </form>
       </div>
     </div>
+    
   );
 }
 

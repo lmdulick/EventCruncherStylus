@@ -4,14 +4,16 @@
 --     password VARCHAR(255)
 -- );
 
--- INSERT INTO profiles (username, password)
+-- INSERT INTO profiles (id, username, password)
 -- VALUES (
+--     1,
 --     'admin',
---     'Admin001!'
+--     'admin'
 -- );
 
 
-
+-- UPDATE profiles
+-- SET password = '$2a$10$r2MBKnD831z0TfeFkXsa5ePad6EoCrv.ptDRnerCY/OPhiyxrNQr6'
+-- WHERE username = 'admin';
 
 SELECT * FROM profiles;
-
