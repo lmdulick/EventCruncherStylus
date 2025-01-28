@@ -567,7 +567,7 @@ const CubicLevel = () => {
             ✱
           </button>
 
-          <h2 className="face-label">{labels[selectedFaceIndex]}</h2>
+          <h2 className="face-label">{labels[selectedFaceIndex]} ?</h2>
           <div className="text-area-container">
             <textarea
               id="text-area"
