@@ -422,41 +422,101 @@ const handleSave = async () => {
   
   
   // Method for handling when a user clicks "X" button and deletes an uploaded file
-  const handleDeleteFile = (faceIndex, fileIndex, type) => {
-    setFaceFiles((prev) => {
-        const updatedFiles = { ...prev };
-        if (updatedFiles[faceIndex]) {
-            updatedFiles[faceIndex].saved = updatedFiles[faceIndex].saved.filter((_, i) => i !== fileIndex);
-        }
-        return updatedFiles;
-    });
+  // const handleDeleteFile = (faceIndex, fileIndex, type) => {
+  //   setFaceFiles((prev) => {
+  //       const updatedFiles = { ...prev };
+  //       if (updatedFiles[faceIndex]) {
+  //           updatedFiles[faceIndex].saved = updatedFiles[faceIndex].saved.filter((_, i) => i !== fileIndex);
+  //       }
+  //       return updatedFiles;
+  //   });
 
-    setTempFaceFiles((prev) => {
-        const updatedTempFiles = { ...prev };
-        if (updatedTempFiles[faceIndex]) {
-            updatedTempFiles[faceIndex][type] = updatedTempFiles[faceIndex][type].filter((_, i) => i !== fileIndex);
-        }
-        return updatedTempFiles;
-    });
+  //   setTempFaceFiles((prev) => {
+  //       const updatedTempFiles = { ...prev };
+  //       if (updatedTempFiles[faceIndex]) {
+  //           updatedTempFiles[faceIndex][type] = updatedTempFiles[faceIndex][type].filter((_, i) => i !== fileIndex);
+  //       }
+  //       return updatedTempFiles;
+  //   });
 
-    // Get the filename to remove
-    const fileNameToRemove =
-        type === "saved"
-            ? faceFiles[faceIndex]?.saved[fileIndex]?.name
-            : tempFaceFiles[faceIndex]?.pending[fileIndex]?.name;
+  //   // Get the filename to remove
+  //   const fileNameToRemove =
+  //       type === "saved"
+  //           ? faceFiles[faceIndex]?.saved[fileIndex]?.name
+  //           : tempFaceFiles[faceIndex]?.pending[fileIndex]?.name;
 
-    // Remove the file's bullet point from the text box
-    setInputText((prevText) => {
-        if (fileNameToRemove) {
-            return prevText
-                .split("\n") // Split text into lines
-                .filter((line) => !line.includes(fileNameToRemove)) // Remove the line with the file name
-                .join("\n"); // Rejoin text
-        }
-        return prevText;
-    });
-  };
+  //   // Remove the file's bullet point from the text box
+  //   setInputText((prevText) => {
+  //       if (fileNameToRemove) {
+  //           return prevText
+  //               .split("\n") // Split text into lines
+  //               .filter((line) => !line.includes(fileNameToRemove)) // Remove the line with the file name
+  //               .join("\n"); // Rejoin text
+  //       }
+  //       return prevText;
+  //   });
+  // };
+  const handleDeleteFile = async (faceIndex, fileIndex, type) => {
+    const faceLabels = ["who", "what", "when", "where", "why", "how"];
+    const face = faceLabels[faceIndex];
 
+    if (!userId) {
+        console.error("🔴 Error: No user ID found.");
+        return;
+    }
+
+    try {
+        const response = await fetch("http://localhost:4000/api/avdata/delete-file", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: userId, face }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Unknown error");
+
+        console.log(`🟢 File deleted for face: ${face}`);
+
+        setFaceFiles((prev) => {
+            const updatedFiles = { ...prev };
+            if (updatedFiles[faceIndex]) {
+                updatedFiles[faceIndex].saved = updatedFiles[faceIndex].saved.filter((_, i) => i !== fileIndex);
+            }
+            return updatedFiles;
+        });
+
+        setTempFaceFiles((prev) => {
+            const updatedTempFiles = { ...prev };
+            if (updatedTempFiles[faceIndex]) {
+                updatedTempFiles[faceIndex][type] = updatedTempFiles[faceIndex][type].filter((_, i) => i !== fileIndex);
+            }
+            return updatedTempFiles;
+        });
+
+        // Remove file name from input text
+        const fileNameToRemove =
+            type === "saved"
+                ? faceFiles[faceIndex]?.saved[fileIndex]?.name
+                : tempFaceFiles[faceIndex]?.pending[fileIndex]?.name;
+
+        setInputText((prevText) => {
+            if (fileNameToRemove) {
+                return prevText
+                    .split("\n")
+                    .filter((line) => !line.includes(fileNameToRemove))
+                    .join("\n");
+            }
+            return prevText;
+        });
+
+    } catch (error) {
+        console.error("🔴 Error deleting file:", error);
+    }
+};
+
+ 
+
+  
   
   
   // Method for formatting the text box's text & bullet points

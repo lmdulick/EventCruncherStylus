@@ -217,13 +217,6 @@ app.get('/api/avdata/files/:userId/:face', (req, res) => {
         res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(fileName)}"`);
         console.log("Here's the headers: ", res.getHeaders());
         res.send(Buffer.from(fileData));
-        
-        // Send metadata first, then the file data
-        // res.json({
-        //     fileName: fileName,
-        //     fileType: fileType,
-        //     fileData: fileData.toString('base64') // Convert file to base64 for transfer
-        // });
     });
 });
 
@@ -250,6 +243,28 @@ app.get('/api/avdata/:userId', (req, res) => {
 
         console.log(`🟢 User data retrieved for user ${userId}`);
         res.status(200).json(results[0]);
+    });
+});
+
+app.delete('/api/avdata/delete-file', (req, res) => {
+    const { user_id, face } = req.body;
+
+    if (!user_id || !face) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
+    const fileColumn = `${face.replace('_text', '')}_files`;
+    const fileNameColumn = `${face.replace('_text', '')}_file_name`;
+    const fileTypeColumn = `${face.replace('_text', '')}_file_type`;
+
+    const query = `UPDATE avdata SET ${fileColumn} = NULL, ${fileNameColumn} = NULL, ${fileTypeColumn} = NULL WHERE user_id = ?`;
+
+    db.query(query, [user_id], (err, results) => {
+        if (err) {
+            console.error('🔴 Database error while deleting file:', err.message);
+            return res.status(500).json({ error: 'Database update error' });
+        }
+        res.status(200).json({ message: `File for ${face} deleted successfully` });
     });
 });
 
