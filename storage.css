@@ -171,8 +171,8 @@ html, body {
 
 /* BULLET POINT BUTTON */
 .bullet-button {
-  background-color: #ffffff;
-  border: 1px solid #ccc;
+  background-color: #f5f7f6 !important;
+  border: 1px solid #f5f7f6;
   border-radius: 4px;
   padding: 5px;
   cursor: pointer;
@@ -180,23 +180,23 @@ html, body {
   justify-content: center;
   align-items: center;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  width: 30px;
-  height: 30px;
+  width: 37px;
+  height: 37px;
 
   position: relative;
-  top: 35px;
+  top: 37px;
   left: 5px;
 }
 
 .bullet-button:hover {
-  background-color: #f9f9f9;
+  background-color: #f5f7f6;
   border-color: #bbb;
   box-shadow: 0 10px 12px rgba(0, 0, 0, 0.2);
 }
 
 .bullet-image {
-  width: 40px;
-  height: 40px;
+  width: 35px;
+  height: 35px;
   object-fit: contain;
 }
 
@@ -353,8 +353,8 @@ html, body {
 }
 
 
-/* ADDITIONAL INSTRUCTIONS BUTTON */
-.instructions-button {
+/* CRITERIA INSTRUCTIONS BUTTON */
+.ci-button {
   background-color: white !important;
   color: black !important;
   /* font-weight: bold; */
@@ -372,14 +372,14 @@ html, body {
   transition: background-color 0.3s ease;
 }
 
-.instructions-button:hover {
+.ci-button:hover {
   /* background-color: #e9e8e8 !important; */
   box-shadow: 0px 10px 12px rgba(0, 0, 0, 0.2);
 }
 
 
-/* ADDITIONAL INSTRUCTIONS (MODAL) POP-UP */
-.i-modal-overlay {
+/* CRITERIA INSTRUCTIONS (MODAL) POP-UP */
+.ci-modal-overlay {
   position: fixed;
   top: 0 !important;
   left: 0 !important;
@@ -392,7 +392,7 @@ html, body {
   z-index: 2000;
 }
 
-.i-modal-content {
+.ci-modal-content {
   background: white;
   color: black !important;
   padding: 45px;
@@ -408,7 +408,7 @@ html, body {
   align-items: stretch;
 }
 
-.i-modal-face-label {
+.ci-modal-face-label {
   font-size: 1.5rem;
   font-weight: bold;
   margin-bottom: 20px;
@@ -416,7 +416,7 @@ html, body {
   color: black;
 }
 
-.instructions-textbox {
+.ci-textbox {
   width: 100%;
   height: auto;
   max-height: 90vh;

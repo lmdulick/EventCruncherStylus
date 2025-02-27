@@ -43,6 +43,84 @@ const CubicLevel = () => {
   const textureLoader = new THREE.TextureLoader();
   const materials = [];
 
+  // Fetch userId
+  const [userId, setUserId] = useState(null);
+  useEffect(() => {
+    const storedUserId = localStorage.getItem("loggedInUserId");
+    if (storedUserId) {
+        setUserId(storedUserId);
+        fetchSavedData(storedUserId);
+    } else {
+        console.error("User ID not found in localStorage");
+    }
+  }, []);
+
+  // Fetch saved cube data from backend
+const fetchSavedData = async (userId) => {
+  try {
+      const response = await fetch(`http://localhost:4000/api/avdata/${userId}`);
+      if (!response.ok) throw new Error(`🔴 Server Error: ${response.statusText}`);
+
+      const data = await response.json();
+      console.log("🟢 Fetched Data:", data);
+
+      setFaceTexts({
+          0: data.who_text || "",
+          1: data.what_text || "",
+          2: data.when_text || "",
+          3: data.where_text || "",
+          4: data.why_text || "",
+          5: data.how_text || "",
+      });
+
+      // Fetch files separately
+      for (let i = 0; i < 6; i++) {
+          const face = ["who", "what", "when", "where", "why", "how"][i];
+
+          try {
+              const fileResponse = await fetch(`http://localhost:4000/api/avdata/files/${userId}/${face}`);
+              
+              if (fileResponse.ok) {                
+                  const blob = await fileResponse.blob();
+                  const fileType = fileResponse.headers.get("Content-Type");
+                  const fileNameHeader = fileResponse.headers.get("Content-Disposition");
+                  let fileName = "unknown_file";
+
+                  // Extract filename correctly
+                  if (fileNameHeader) {
+                    const match = fileNameHeader.match(/filename="?([^"]+)"?/);
+                    if (match && match[1]) {
+                        fileName = decodeURIComponent(match[1].trim());
+                    } else {
+                        console.warn("⚠️ Could not extract filename from header:", fileNameHeader);
+                        fileName = "untitled_file";
+                    }
+                  }
+                  
+                  if (!fileName || fileName === "unknown_file") {
+                      console.warn(`⚠️ Extracted filename is invalid. Defaulting to "untitled_file"`);
+                      fileName = "untitled_file";
+                  }
+                
+                  const fileURL = URL.createObjectURL(blob);
+
+                  setFaceFiles((prev) => ({
+                      ...prev,
+                      [i]: {
+                          saved: [{ name: fileName, url: fileURL, type: fileType }],
+                          pending: [],
+                      },
+                  }));
+              }
+          } catch (fileError) {
+              console.warn(`⚠️ No file found for ${face}`);
+          }
+      }
+  } catch (error) {
+      console.error("🔴 Error fetching user data:", error);
+  }
+};
+
 
   // Toggle Default Instructions text box visibility
   const toggleDITextBox = () => {
@@ -101,7 +179,7 @@ const CubicLevel = () => {
     }
   }, [selectedFaceIndex]);
   
-
+  
   useEffect(() => {
     // Initialize Scene, Camera, Renderer
     const scene = new THREE.Scene();
@@ -233,55 +311,90 @@ const CubicLevel = () => {
     };
   }, [faceTexts]);
 
-
-  // Method for handling saving data when user clicks "SAVE" button
-  const handleSave = () => {
-    if (activeFaceIndex !== null && materials[activeFaceIndex]) {
-        // Reset the active face texture
-        materials[activeFaceIndex].map = textureLoader.load(
-            `/images/cube_faces/${labels[activeFaceIndex].toLowerCase()}B.jpg`
-        );
-        materials[activeFaceIndex].needsUpdate = true;
-    }
-
-    // Save the changes for the selected face
-    setFaceFiles((prev) => {
-        const updatedFaceFiles = { ...prev };
-
-        // Update only the currently selected face
-        if (selectedFaceIndex !== null) {
-            const currentFiles = tempFaceFiles[selectedFaceIndex] || { saved: [], pending: [] };
-            updatedFaceFiles[selectedFaceIndex] = {
-                saved: [
-                    ...(currentFiles.saved || []), // Retain previously saved files
-                    ...(currentFiles.pending || []), // Add pending files
-                ],
-                pending: [], // Clear pending files after saving
-            };
-        }
-
-        return updatedFaceFiles;
-    });
-
-    if (selectedFaceIndex !== null) {
-        setFaceTexts((prev) => ({
-            ...prev,
-            [selectedFaceIndex]: inputText || "",
-        }));
-    }
-
-    // Clear temp state and reset text input
-    setTempFaceFiles((prev) => ({
-        ...prev,
-        [selectedFaceIndex]: { saved: [], pending: [] },
-    }));
-    setInputText("");
-    setActiveFaceIndex(null);
-    setSelectedFaceIndex(null);
-
-    // Optionally, show default instructions
-    setIsDITextBoxVisible(true);
+  // Handle cube face click
+  const handleFaceClick = (faceIndex) => {
+      setSelectedFaceIndex(faceIndex);
+      setInputText(faceTexts[faceIndex] || ""); // Load saved text into input
   };
+
+
+// Method for handling saving data when user clicks "SAVE" button
+const handleSave = async () => {
+  console.log("🟢 handleSave() called");
+  console.log("🟢 userId:", userId);
+
+  if (!userId || selectedFaceIndex === null) {
+      console.error("🔴 Error: User ID or selected face is missing.");
+      return;
+  }
+
+  const faceColumn = ["who_text", "what_text", "when_text", "where_text", "why_text", "how_text"][selectedFaceIndex];
+  
+  const formData = new FormData();
+  formData.append("user_id", userId);
+  formData.append("face", faceColumn);
+  formData.append("text", inputText || "");
+
+  const selectedFiles = tempFaceFiles[selectedFaceIndex]?.pending || [];
+
+  if (selectedFiles.length > 0) {
+      formData.append("file", selectedFiles[0]); // Only upload the first file
+      console.log("🟢 Uploading file:", selectedFiles[0].name);
+  } else {
+      console.log("🔴 No file attached.");
+  }
+
+  try {
+      const response = await fetch("http://localhost:4000/api/avdata/update", {
+          method: "POST",
+          body: formData,
+      });
+
+      const data = await response.json();
+      console.log("🟢 Response from Backend:", data);
+
+      if (!response.ok) {
+          throw new Error(`🔴 Server Error: ${data.error || "Unknown error"}`);
+      }
+
+      // Update the face text state immediately
+      setFaceTexts((prev) => ({
+          ...prev,
+          [selectedFaceIndex]: inputText || "",
+      }));
+
+      // Move pending files to saved files
+      setFaceFiles((prev) => ({
+          ...prev,
+          [selectedFaceIndex]: {
+              saved: [...(prev[selectedFaceIndex]?.saved || []), ...selectedFiles],
+              pending: [],
+          },
+      }));
+
+      // Clear temporary file state
+      setTempFaceFiles((prev) => ({
+          ...prev,
+          [selectedFaceIndex]: { saved: [], pending: [] },
+      }));
+
+  } catch (error) {
+      console.error("🔴 Error updating data:", error);
+  }
+
+  // Reset UI state
+  if (activeFaceIndex !== null && materials[activeFaceIndex]) {
+      materials[activeFaceIndex].map = textureLoader.load(
+          `/images/cube_faces/${labels[activeFaceIndex].toLowerCase()}B.jpg`
+      );
+      materials[activeFaceIndex].needsUpdate = true;
+  }
+
+  setInputText("");
+  setActiveFaceIndex(null);
+  setSelectedFaceIndex(null);
+  setIsDITextBoxVisible(true);
+};
 
 
   // Method for handling uploading a file when user clicks "INSERT FILE" button
@@ -310,38 +423,40 @@ const CubicLevel = () => {
   
   // Method for handling when a user clicks "X" button and deletes an uploaded file
   const handleDeleteFile = (faceIndex, fileIndex, type) => {
-    setTempFaceFiles((prev) => {
-      const currentFiles = prev[faceIndex] || { saved: [], pending: [] };
-  
-      // Remove the file from the specified type (saved or pending)
-      const updatedFiles = {
-        ...currentFiles,
-        [type]: currentFiles[type].filter((_, i) => i !== fileIndex),
-      };
-  
-      return {
-        ...prev,
-        [faceIndex]: updatedFiles,
-      };
+    setFaceFiles((prev) => {
+        const updatedFiles = { ...prev };
+        if (updatedFiles[faceIndex]) {
+            updatedFiles[faceIndex].saved = updatedFiles[faceIndex].saved.filter((_, i) => i !== fileIndex);
+        }
+        return updatedFiles;
     });
-  
-    // Update the text box to remove the file name bullet point
-    setInputText((prevText) => {
-      const fileNameToRemove =
+
+    setTempFaceFiles((prev) => {
+        const updatedTempFiles = { ...prev };
+        if (updatedTempFiles[faceIndex]) {
+            updatedTempFiles[faceIndex][type] = updatedTempFiles[faceIndex][type].filter((_, i) => i !== fileIndex);
+        }
+        return updatedTempFiles;
+    });
+
+    // Get the filename to remove
+    const fileNameToRemove =
         type === "saved"
-          ? tempFaceFiles[faceIndex]?.saved[fileIndex]?.name
-          : tempFaceFiles[faceIndex]?.pending[fileIndex]?.name;
-  
-      if (fileNameToRemove) {
-        return prevText
-          .split("\n")
-          .filter((line) => line.trim() !== `• ${fileNameToRemove}`)
-          .join("\n");
-      }
-  
-      return prevText;
+            ? faceFiles[faceIndex]?.saved[fileIndex]?.name
+            : tempFaceFiles[faceIndex]?.pending[fileIndex]?.name;
+
+    // Remove the file's bullet point from the text box
+    setInputText((prevText) => {
+        if (fileNameToRemove) {
+            return prevText
+                .split("\n") // Split text into lines
+                .filter((line) => !line.includes(fileNameToRemove)) // Remove the line with the file name
+                .join("\n"); // Rejoin text
+        }
+        return prevText;
     });
   };
+
   
   
   // Method for formatting the text box's text & bullet points
@@ -455,16 +570,25 @@ const CubicLevel = () => {
   
     // Step 2: Add the Excel File to the ZIP
     zip.file("CubeData.xlsx", excelBuffer);
-  
-    // Step 3: Add Uploaded Files to the ZIP
-    Object.entries(faceFiles).forEach(([faceIndex, files]) => {
-      const { saved = [] } = files;
-      if (Array.isArray(saved)) {
-        saved.forEach((file) => {
-          zip.file(file.name, file);
-        });
+
+    // Step 3: Fetch and Add Uploaded Files to the ZIP
+    for (let i = 0; i < 6; i++) {
+      const { saved = [] } = faceFiles[i] || {};
+      for (const file of saved) {
+          try {
+              console.log(`🟢 Fetching file: ${file.name}`);
+
+              // Fetch file as Blob
+              const response = await fetch(file.url);
+              if (!response.ok) throw new Error(`Failed to fetch ${file.name}`);
+
+              const blob = await response.blob();
+              zip.file(file.name, blob);  // ✅ Add Blob to ZIP
+          } catch (error) {
+              console.error(`🔴 Error fetching file ${file.name}:`, error);
+          }
       }
-    });
+  }
   
     // Step 4: Generate the ZIP file and trigger the download
     zip.generateAsync({ type: "blob" }).then((content) => {

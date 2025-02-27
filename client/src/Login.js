@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import logo from './ECS_logo.png'; 
 import './Login.css'; 
 
-
 function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -20,25 +19,25 @@ function Login() {
       const response = await fetch('http://localhost:4000/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password }),
       });
   
       if (response.ok) {
-        navigate('/root');
+        const { userId } = await response.json(); // Get userId from backend response
+        localStorage.setItem('loggedInUserId', userId); // Store userId in localStorage
+        navigate('/root'); // Redirect to the main application
       } else {
         // Display error pop-up
         setShowPopup(true);
-        
-        // Hide the pop-up after 3 seconds
         setTimeout(() => {
           setShowPopup(false);
-        }, 3000); 
+        }, 3000); // Hide the pop-up after 3 seconds
       }
     } catch (error) {
       console.error('Error logging in:', error);
       setErrorMessage('An error occurred. Please try again.');
     }
-  }
+  };
 
   return (
     <div className="login-container">
@@ -75,12 +74,9 @@ function Login() {
           </div>
           {errorMessage && <div className="error-message">{errorMessage}</div>}
           <button type="submit" className="login-btn">Login</button>
-          <div className="login-additional-options">
-          </div>
         </form>
       </div>
     </div>
-    
   );
 }
 

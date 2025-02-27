@@ -42,6 +42,10 @@ npm install xlsx
 npm install jszip file-saver
 ```
 
+```shell
+npm install multer
+```
+
 # How-To Run the Application
 ## Frontend: 'client'
 
@@ -86,25 +90,21 @@ SHOW TABLES;
 ```
 
 ```shell
-USE profiles;
-```
-* MySQL DB for storing profile data (firstname, lastname, email, username, password)
-
-```shell
 DESCRIBE profiles;
 ```
+* MySQL DB for storing profile data (firstname, lastname, email, username, password)
 
 ```shell
 SELECT * FROM profiles;
 ```
 
 ```shell
-USE avdata;
+DESCRIBE avdata;
 ```
 * MySQL DB for storing AV-Scene data
 
 ```shell
-USE criteria;
+DESCRIBE criteria;
 ```
 * MySQL DB for storing criteria instructions specific to a certain face
 
