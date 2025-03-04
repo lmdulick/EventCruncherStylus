@@ -430,6 +430,21 @@ html, body {
   box-sizing: border-box;
 }
 
+.ci-save-button {
+  background-color: #007bff;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  padding: 9px 16px !important;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  width: auto;
+  display: block;
+  margin: 10px auto;
+}
+
 
 /* DEFAULT INSTRUCTIONS TEXT BOX */
 .di-textbox {

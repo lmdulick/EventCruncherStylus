@@ -859,6 +859,10 @@ const handleSave = async () => {
               placeholder={`Enter criteria instructions for the ${labels[selectedFaceIndex]} face...`}
               // placeholder={`None.`}
             ></textarea>
+            {/* SAVE BUTTON */}
+            <button className="ci-save-button" onClick={toggleCIModal}>
+              SAVE
+            </button>
           </div>
         </div>
       )}
