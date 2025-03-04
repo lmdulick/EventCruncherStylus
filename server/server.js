@@ -246,6 +246,7 @@ app.get('/api/avdata/:userId', (req, res) => {
     });
 });
 
+
 app.delete('/api/avdata/delete-file', (req, res) => {
     const { user_id, face } = req.body;
 
@@ -268,6 +269,122 @@ app.delete('/api/avdata/delete-file', (req, res) => {
     });
 });
 
+
+// app.post("/api/update-criteria", async (req, res) => {
+//     const { userId, face, text } = req.body;
+  
+//     // Ensure only admin (userId = 1) can modify criteria
+//     if (userId !== "1") {
+//       return res.status(403).json({ error: "Unauthorized: Only admin can update criteria instructions." });
+//     }
+  
+//     try {
+//       const query = `UPDATE criteria SET ${face} = ? WHERE id = 1`; // Update correct column
+//       db.query(query, [text], (err, result) => {
+//         if (err) {
+//           console.error("🔴 Database error:", err);
+//           return res.status(500).json({ error: "Database error." });
+//         }
+//         res.json({ message: "Criteria updated successfully!" });
+//       });
+//     } catch (error) {
+//       console.error("🔴 Server error:", error);
+//       res.status(500).json({ error: "Server error." });
+//     }
+//   });
+app.post("/api/update-criteria", async (req, res) => {
+    const { userId, face, text } = req.body;
+  
+    console.log("🟢 Received Update Request:", { userId, face, text });
+  
+    if (userId !== "1") {
+      console.warn("🔴 Unauthorized Access Attempt:", userId);
+      return res.status(403).json({ error: "Unauthorized: Only admin can update criteria instructions." });
+    }
+  
+    try {
+      // Check if any row exists in the criteria table
+      db.query("SELECT COUNT(*) AS count FROM criteria", (err, result) => {
+        if (err) {
+          console.error("🔴 Error checking criteria count:", err);
+          return res.status(500).json({ error: "Database error while checking existing data." });
+        }
+  
+        const rowCount = result[0].count;
+  
+        if (rowCount === 0) {
+          // If no row exists, insert a default empty row
+          const insertQuery = `
+            INSERT INTO criteria (who_text, what_text, when_text, where_text, why_text, how_text) 
+            VALUES ("", "", "", "", "", "")
+          `;
+  
+          db.query(insertQuery, (insertErr, insertResult) => {
+            if (insertErr) {
+              console.error("🔴 Error inserting default criteria row:", insertErr);
+              return res.status(500).json({ error: "Database error while inserting default row." });
+            }
+  
+            console.log("✅ Default criteria row inserted:", insertResult);
+  
+            // Now update the newly created row
+            updateCriteria();
+          });
+        } else {
+          // If row exists, update it directly
+          updateCriteria();
+        }
+      });
+  
+      function updateCriteria() {
+        const query = `UPDATE criteria SET ${face} = ? WHERE id = 1`;
+  
+        db.query(query, [text], (updateErr, updateResult) => {
+          if (updateErr) {
+            console.error("🔴 Database Error:", updateErr);
+            return res.status(500).json({ error: "Database error while updating criteria." });
+          }
+  
+          console.log("✅ Criteria Updated Successfully:", updateResult);
+          res.json({ message: "Criteria updated successfully!" });
+        });
+      }
+    } catch (error) {
+      console.error("🔴 Server Error:", error);
+      res.status(500).json({ error: "Server error." });
+    }
+  });
+  
+  app.get("/api/get-criteria", async (req, res) => {
+    try {
+      db.query("SELECT * FROM criteria LIMIT 1", (err, result) => {
+        if (err) {
+          console.error("🔴 Error fetching criteria:", err);
+          return res.status(500).json({ error: "Database error." });
+        }
+  
+        if (result.length === 0) {
+          console.warn("⚠️ No criteria found in database.");
+          return res.json({
+            who_text: "None.",
+            what_text: "None.",
+            when_text: "None.",
+            where_text: "None.",
+            why_text: "None.",
+            how_text: "None.",
+          });
+        }
+  
+        console.log("🟢 Retrieved Criteria:", result[0]);
+        res.json(result[0]);
+      });
+    } catch (error) {
+      console.error("🔴 Server Error:", error);
+      res.status(500).json({ error: "Server error." });
+    }
+  });
+  
+  
 
 // Start the server
 app.listen(4000, () => {

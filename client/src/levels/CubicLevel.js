@@ -53,6 +53,7 @@ const CubicLevel = () => {
     } else {
         console.error("User ID not found in localStorage");
     }
+    console.log("USERID: ", userId);
   }, []);
 
   // Fetch saved cube data from backend
@@ -120,6 +121,38 @@ const fetchSavedData = async (userId) => {
       console.error("🔴 Error fetching user data:", error);
   }
 };
+
+// Fetch Criteria Instructions from criteria table
+const fetchCriteriaInstructions = async () => {
+  try {
+    const response = await fetch("http://localhost:4000/api/get-criteria");
+    
+    if (!response.ok) {
+      throw new Error(`🔴 Server Error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log("🟢 Fetched Criteria Instructions:", data);
+
+    // Update state with the fetched data
+    setCriteriaInstructions({
+      0: data.who_text || "None.",
+      1: data.what_text || "None.",
+      2: data.when_text || "None.",
+      3: data.where_text || "None.",
+      4: data.why_text || "None.",
+      5: data.how_text || "None.",
+    });
+
+  } catch (error) {
+    console.error("🔴 Error fetching criteria instructions:", error);
+  }
+};
+
+useEffect(() => {
+  fetchCriteriaInstructions();
+}, []);
+
 
 
   // Toggle Default Instructions text box visibility
@@ -397,6 +430,46 @@ const handleSave = async () => {
 };
 
 
+// Method to handle saving criteria instructions as the admin
+const handleSaveCriteria = async () => {
+  if (userId !== "1") {
+    console.error("🔴 Unauthorized: Only admin (userId = 1) can save criteria.");
+    return;
+  }
+
+  const faceColumns = ["who_text", "what_text", "when_text", "where_text", "why_text", "how_text"];
+  const faceColumn = faceColumns[selectedFaceIndex]; // Get the column name based on the selected face
+
+  if (!faceColumn) {
+    console.error("🔴 Invalid face index:", selectedFaceIndex);
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:4000/api/update-criteria", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId, // Ensure backend checks admin privilege
+        face: faceColumn,
+        text: criteriaInstructions[selectedFaceIndex] || "",
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(`🔴 Server Error: ${data.error || "Unknown error"}`);
+    }
+
+    console.log("🟢 Criteria successfully saved:", data);
+    toggleCIModal(); // Close modal after saving
+  } catch (error) {
+    console.error("🔴 Error saving criteria:", error);
+  }
+};
+
+
   // Method for handling uploading a file when user clicks "INSERT FILE" button
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
@@ -420,42 +493,8 @@ const handleSave = async () => {
     }
   };
   
-  
-  // Method for handling when a user clicks "X" button and deletes an uploaded file
-  // const handleDeleteFile = (faceIndex, fileIndex, type) => {
-  //   setFaceFiles((prev) => {
-  //       const updatedFiles = { ...prev };
-  //       if (updatedFiles[faceIndex]) {
-  //           updatedFiles[faceIndex].saved = updatedFiles[faceIndex].saved.filter((_, i) => i !== fileIndex);
-  //       }
-  //       return updatedFiles;
-  //   });
 
-  //   setTempFaceFiles((prev) => {
-  //       const updatedTempFiles = { ...prev };
-  //       if (updatedTempFiles[faceIndex]) {
-  //           updatedTempFiles[faceIndex][type] = updatedTempFiles[faceIndex][type].filter((_, i) => i !== fileIndex);
-  //       }
-  //       return updatedTempFiles;
-  //   });
-
-  //   // Get the filename to remove
-  //   const fileNameToRemove =
-  //       type === "saved"
-  //           ? faceFiles[faceIndex]?.saved[fileIndex]?.name
-  //           : tempFaceFiles[faceIndex]?.pending[fileIndex]?.name;
-
-  //   // Remove the file's bullet point from the text box
-  //   setInputText((prevText) => {
-  //       if (fileNameToRemove) {
-  //           return prevText
-  //               .split("\n") // Split text into lines
-  //               .filter((line) => !line.includes(fileNameToRemove)) // Remove the line with the file name
-  //               .join("\n"); // Rejoin text
-  //       }
-  //       return prevText;
-  //   });
-  // };
+  // Method for deleting an uploaded file
   const handleDeleteFile = async (faceIndex, fileIndex, type) => {
     const faceLabels = ["who", "what", "when", "where", "why", "how"];
     const face = faceLabels[faceIndex];
@@ -514,11 +553,7 @@ const handleSave = async () => {
     }
 };
 
- 
 
-  
-  
-  
   // Method for formatting the text box's text & bullet points
   const formatText = (command) => {
     const textarea = document.getElementById("text-area");
@@ -827,18 +862,25 @@ const handleSave = async () => {
             <button className="close-button" onClick={toggleCIModal}>
               X
             </button>
+
             {/* Label of Cube Face */}
             <h2 className="ci-modal-face-label">
-              Criteria Instructions : {labels[selectedFaceIndex]}
-              {/* Criteria Instructions for the {labels[selectedFaceIndex]} Face */}
+              Criteria Instructions: {labels[selectedFaceIndex]}
             </h2>
+
             {/* Criteria Instructions Text Box */}
             <textarea
               className="ci-textbox"
+              // value={criteriaInstructions[selectedFaceIndex] !== "" ? criteriaInstructions[selectedFaceIndex] : (userId === "1" ? "" : "None.")}
               value={criteriaInstructions[selectedFaceIndex] || ""}
-              onChange={(e) =>
-                handleCIChange(selectedFaceIndex, e.target.value)
-              }
+              onChange={(e) => {
+                if (userId === "1") {
+                  console.log("USERID (again): ", userId);
+                  handleCIChange(selectedFaceIndex, e.target.value);
+                }
+              }}
+              readOnly={userId !== "1"} // Disable editing if not admin
+              placeholder={`None.`}
               ref={(textarea) => {
                 if (textarea) {
                   textarea.style.height = "auto";
@@ -856,13 +898,15 @@ const handleSave = async () => {
                   }
                 }
               }}
-              placeholder={`Enter criteria instructions for the ${labels[selectedFaceIndex]} face...`}
-              // placeholder={`None.`}
             ></textarea>
-            {/* SAVE BUTTON */}
-            <button className="ci-save-button" onClick={toggleCIModal}>
-              SAVE
-            </button>
+
+            {/* Show SAVE button only if the user is admin */}
+            {/* Show SAVE button only if userId = 1 (Admin) */}
+            {userId === "1" && (
+              <button className="ci-save-button" onClick={handleSaveCriteria}>
+                SAVE
+              </button>
+            )}
           </div>
         </div>
       )}

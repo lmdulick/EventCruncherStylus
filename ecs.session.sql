@@ -4,4 +4,4 @@ SHOW TABLES;
 
 -- DESC avdata;
 
-SELECT * FROM avdata;
+SELECT * FROM criteria;

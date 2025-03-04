@@ -28,3 +28,14 @@
 //     how_files JSON,
 //     FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE
 // );
+
+// CREATE TABLE criteria (
+//     id INT AUTO_INCREMENT PRIMARY KEY,
+//     who_text TEXT,
+//     what_text TEXT,
+//     when_text TEXT,
+//     where_text TEXT,
+//     why_text TEXT,
+//     how_text TEXT,
+//     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+// );
