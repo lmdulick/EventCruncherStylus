@@ -26,8 +26,34 @@
 //     why_files JSON,
 //     how_text TEXT,
 //     how_files JSON,
+//     who_file_name VARCHAR(255),
+//     who_file_type VARCHAR(100),
+//     what_file_name VARCHAR(255),
+//     what_file_type VARCHAR(100),
+//     when_file_name VARCHAR(255),
+//     when_file_type VARCHAR(100),
+//     where_file_name VARCHAR(255),
+//     where_file_type VARCHAR(100),
+//     why_file_name VARCHAR(255),
+//     why_file_type VARCHAR(100),
+//     how_file_name VARCHAR(255),
+//     how_file_type VARCHAR(100),
 //     FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE
 // );
+
+
+// CREATE TABLE avdata_files (
+//     id INT AUTO_INCREMENT PRIMARY KEY,
+//     user_id INT NOT NULL,
+//     face ENUM('who', 'what', 'when', 'where', 'why', 'how') NOT NULL,
+//     file_data LONGBLOB NOT NULL,
+//     file_name VARCHAR(255) NOT NULL,
+//     file_type VARCHAR(100) NOT NULL,
+//     upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//     FOREIGN KEY (user_id) REFERENCES avdata(user_id) ON DELETE CASCADE
+// );
+
+
 
 // CREATE TABLE criteria (
 //     id INT AUTO_INCREMENT PRIMARY KEY,

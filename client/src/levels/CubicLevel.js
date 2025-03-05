@@ -351,148 +351,150 @@ useEffect(() => {
   };
 
 
-// Method for handling saving data when user clicks "SAVE" button
-const handleSave = async () => {
-  console.log("🟢 handleSave() called");
-  console.log("🟢 userId:", userId);
+  // Method for handling saving data when user clicks "SAVE" button
+  const handleSave = async () => {
+    console.log("🟢 handleSave() called");
+    console.log("🟢 userId:", userId);
 
-  if (!userId || selectedFaceIndex === null) {
-      console.error("🔴 Error: User ID or selected face is missing.");
+    if (!userId || selectedFaceIndex === null) {
+        console.error("🔴 Error: User ID or selected face is missing.");
+        return;
+    }
+
+    const faceColumn = ["who_text", "what_text", "when_text", "where_text", "why_text", "how_text"][selectedFaceIndex];
+    
+    const formData = new FormData();
+    formData.append("user_id", userId);
+    formData.append("face", faceColumn);
+    formData.append("text", inputText || "");
+
+    const selectedFiles = tempFaceFiles[selectedFaceIndex]?.pending || [];
+
+    if (selectedFiles.length > 0) {
+        formData.append("file", selectedFiles[0]); // Only upload the first file
+        console.log("🟢 Uploading file:", selectedFiles[0].name);
+    } else {
+        console.log("🔴 No file attached.");
+    }
+
+    try {
+        const response = await fetch("http://localhost:4000/api/avdata/update", {
+            method: "POST",
+            body: formData,
+        });
+
+        const data = await response.json();
+        console.log("🟢 Response from Backend:", data);
+
+        if (!response.ok) {
+            throw new Error(`🔴 Server Error: ${data.error || "Unknown error"}`);
+        }
+
+        // Update the face text state immediately
+        setFaceTexts((prev) => ({
+            ...prev,
+            [selectedFaceIndex]: inputText || "",
+        }));
+
+        // Move pending files to saved files
+        setFaceFiles((prev) => ({
+            ...prev,
+            [selectedFaceIndex]: {
+                saved: [...(prev[selectedFaceIndex]?.saved || []), ...selectedFiles],
+                pending: [],
+            },
+        }));
+
+        // Clear temporary file state
+        setTempFaceFiles((prev) => ({
+            ...prev,
+            [selectedFaceIndex]: { saved: [], pending: [] },
+        }));
+
+    } catch (error) {
+        console.error("🔴 Error updating data:", error);
+    }
+
+    // Reset UI state
+    if (activeFaceIndex !== null && materials[activeFaceIndex]) {
+        materials[activeFaceIndex].map = textureLoader.load(
+            `/images/cube_faces/${labels[activeFaceIndex].toLowerCase()}B.jpg`
+        );
+        materials[activeFaceIndex].needsUpdate = true;
+    }
+
+    setInputText("");
+    setActiveFaceIndex(null);
+    setSelectedFaceIndex(null);
+    setIsDITextBoxVisible(true);
+  };
+
+
+  // Method to handle saving criteria instructions as the admin
+  const handleSaveCriteria = async () => {
+    if (userId !== "1") {
+      console.error("🔴 Unauthorized: Only admin (userId = 1) can save criteria.");
       return;
-  }
+    }
 
-  const faceColumn = ["who_text", "what_text", "when_text", "where_text", "why_text", "how_text"][selectedFaceIndex];
-  
-  const formData = new FormData();
-  formData.append("user_id", userId);
-  formData.append("face", faceColumn);
-  formData.append("text", inputText || "");
+    const faceColumns = ["who_text", "what_text", "when_text", "where_text", "why_text", "how_text"];
+    const faceColumn = faceColumns[selectedFaceIndex]; // Get the column name based on the selected face
 
-  const selectedFiles = tempFaceFiles[selectedFaceIndex]?.pending || [];
+    if (!faceColumn) {
+      console.error("🔴 Invalid face index:", selectedFaceIndex);
+      return;
+    }
 
-  if (selectedFiles.length > 0) {
-      formData.append("file", selectedFiles[0]); // Only upload the first file
-      console.log("🟢 Uploading file:", selectedFiles[0].name);
-  } else {
-      console.log("🔴 No file attached.");
-  }
-
-  try {
-      const response = await fetch("http://localhost:4000/api/avdata/update", {
-          method: "POST",
-          body: formData,
+    try {
+      const response = await fetch("http://localhost:4000/api/update-criteria", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId, // Ensure backend checks admin privilege
+          face: faceColumn,
+          text: criteriaInstructions[selectedFaceIndex] || "",
+        }),
       });
 
       const data = await response.json();
-      console.log("🟢 Response from Backend:", data);
 
       if (!response.ok) {
-          throw new Error(`🔴 Server Error: ${data.error || "Unknown error"}`);
+        throw new Error(`🔴 Server Error: ${data.error || "Unknown error"}`);
       }
 
-      // Update the face text state immediately
-      setFaceTexts((prev) => ({
-          ...prev,
-          [selectedFaceIndex]: inputText || "",
-      }));
-
-      // Move pending files to saved files
-      setFaceFiles((prev) => ({
-          ...prev,
-          [selectedFaceIndex]: {
-              saved: [...(prev[selectedFaceIndex]?.saved || []), ...selectedFiles],
-              pending: [],
-          },
-      }));
-
-      // Clear temporary file state
-      setTempFaceFiles((prev) => ({
-          ...prev,
-          [selectedFaceIndex]: { saved: [], pending: [] },
-      }));
-
-  } catch (error) {
-      console.error("🔴 Error updating data:", error);
-  }
-
-  // Reset UI state
-  if (activeFaceIndex !== null && materials[activeFaceIndex]) {
-      materials[activeFaceIndex].map = textureLoader.load(
-          `/images/cube_faces/${labels[activeFaceIndex].toLowerCase()}B.jpg`
-      );
-      materials[activeFaceIndex].needsUpdate = true;
-  }
-
-  setInputText("");
-  setActiveFaceIndex(null);
-  setSelectedFaceIndex(null);
-  setIsDITextBoxVisible(true);
-};
-
-
-// Method to handle saving criteria instructions as the admin
-const handleSaveCriteria = async () => {
-  if (userId !== "1") {
-    console.error("🔴 Unauthorized: Only admin (userId = 1) can save criteria.");
-    return;
-  }
-
-  const faceColumns = ["who_text", "what_text", "when_text", "where_text", "why_text", "how_text"];
-  const faceColumn = faceColumns[selectedFaceIndex]; // Get the column name based on the selected face
-
-  if (!faceColumn) {
-    console.error("🔴 Invalid face index:", selectedFaceIndex);
-    return;
-  }
-
-  try {
-    const response = await fetch("http://localhost:4000/api/update-criteria", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId, // Ensure backend checks admin privilege
-        face: faceColumn,
-        text: criteriaInstructions[selectedFaceIndex] || "",
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(`🔴 Server Error: ${data.error || "Unknown error"}`);
+      console.log("🟢 Criteria successfully saved:", data);
+      toggleCIModal(); // Close modal after saving
+    } catch (error) {
+      console.error("🔴 Error saving criteria:", error);
     }
-
-    console.log("🟢 Criteria successfully saved:", data);
-    toggleCIModal(); // Close modal after saving
-  } catch (error) {
-    console.error("🔴 Error saving criteria:", error);
-  }
-};
+  };
 
 
   // Method for handling uploading a file when user clicks "INSERT FILE" button
-  const handleFileUpload = (event) => {
+  const handleFileUpload = async (event) => {
     const files = Array.from(event.target.files);
-  
+    
     if (files.length > 0 && selectedFaceIndex !== null) {
-      setTempFaceFiles((prev) => {
-        const currentFiles = prev[selectedFaceIndex] || { saved: [], pending: [] };
-  
-        return {
-          ...prev,
-          [selectedFaceIndex]: {
-            saved: currentFiles.saved || [],
-            pending: [...(currentFiles.pending || []), ...files],
-          },
-        };
-      });
-  
-      // Add bullet points for the new files
-      const newFileNames = files.map((file) => `• ${file.name}`).join("\n");
-      setInputText((prevText) => `${prevText}${prevText ? "\n" : ""}${newFileNames}`);
+        const previousFiles = faceFiles[selectedFaceIndex]?.saved || [];
+        
+        // If there's a previously uploaded file, delete it before adding a new one
+        if (previousFiles.length > 0) {
+            await handleDeleteFile(selectedFaceIndex, 0, "saved");
+        }
+
+        setTempFaceFiles((prev) => ({
+            ...prev,
+            [selectedFaceIndex]: {
+                saved: prev[selectedFaceIndex]?.saved || [],
+                pending: files, // Only keep the new file in pending state
+            },
+        }));
+
+        // Update input text to only show the new file name
+        setInputText(`• ${files[0].name}`);
     }
   };
-  
+
 
   // Method for deleting an uploaded file
   const handleDeleteFile = async (faceIndex, fileIndex, type) => {
@@ -516,6 +518,13 @@ const handleSaveCriteria = async () => {
 
         console.log(`🟢 File deleted for face: ${face}`);
 
+        // Get the name of the file being deleted
+        const fileNameToRemove =
+            type === "saved"
+                ? faceFiles[faceIndex]?.saved[fileIndex]?.name
+                : tempFaceFiles[faceIndex]?.pending[fileIndex]?.name;
+
+        // Remove file from the state
         setFaceFiles((prev) => {
             const updatedFiles = { ...prev };
             if (updatedFiles[faceIndex]) {
@@ -527,31 +536,25 @@ const handleSaveCriteria = async () => {
         setTempFaceFiles((prev) => {
             const updatedTempFiles = { ...prev };
             if (updatedTempFiles[faceIndex]) {
-                updatedTempFiles[faceIndex][type] = updatedTempFiles[faceIndex][type].filter((_, i) => i !== fileIndex);
+                updatedTempFiles[faceIndex].pending = updatedTempFiles[faceIndex].pending.filter((_, i) => i !== fileIndex);
             }
             return updatedTempFiles;
         });
 
-        // Remove file name from input text
-        const fileNameToRemove =
-            type === "saved"
-                ? faceFiles[faceIndex]?.saved[fileIndex]?.name
-                : tempFaceFiles[faceIndex]?.pending[fileIndex]?.name;
-
-        setInputText((prevText) => {
-            if (fileNameToRemove) {
+        // Remove bullet point associated with the deleted file from the text area
+        if (fileNameToRemove) {
+            setInputText((prevText) => {
                 return prevText
                     .split("\n")
                     .filter((line) => !line.includes(fileNameToRemove))
                     .join("\n");
-            }
-            return prevText;
-        });
+            });
+        }
 
     } catch (error) {
         console.error("🔴 Error deleting file:", error);
     }
-};
+  };
 
 
   // Method for formatting the text box's text & bullet points
@@ -707,7 +710,7 @@ const handleSaveCriteria = async () => {
             value={`Welcome to the CUBIC LEVEL! \n\nHere’s how to interact with the cube:
   • Spin the cube by clicking and dragging.
   • Click on a face to open the corresponding text box.
-  • Use the "Insert Files" button to add files.
+  • Use the "Insert Files" button to add files. Only ONE file can be added to a cube face.
   • Click "Save" to store your changes.
   • Click the "Excel" button in the bottom right corner to view 
   the cubic data in a spreadsheet format.
@@ -901,7 +904,6 @@ const handleSaveCriteria = async () => {
             ></textarea>
 
             {/* Show SAVE button only if the user is admin */}
-            {/* Show SAVE button only if userId = 1 (Admin) */}
             {userId === "1" && (
               <button className="ci-save-button" onClick={handleSaveCriteria}>
                 SAVE
