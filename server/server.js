@@ -270,28 +270,6 @@ app.delete('/api/avdata/delete-file', (req, res) => {
 });
 
 
-// app.post("/api/update-criteria", async (req, res) => {
-//     const { userId, face, text } = req.body;
-  
-//     // Ensure only admin (userId = 1) can modify criteria
-//     if (userId !== "1") {
-//       return res.status(403).json({ error: "Unauthorized: Only admin can update criteria instructions." });
-//     }
-  
-//     try {
-//       const query = `UPDATE criteria SET ${face} = ? WHERE id = 1`; // Update correct column
-//       db.query(query, [text], (err, result) => {
-//         if (err) {
-//           console.error("🔴 Database error:", err);
-//           return res.status(500).json({ error: "Database error." });
-//         }
-//         res.json({ message: "Criteria updated successfully!" });
-//       });
-//     } catch (error) {
-//       console.error("🔴 Server error:", error);
-//       res.status(500).json({ error: "Server error." });
-//     }
-//   });
 app.post("/api/update-criteria", async (req, res) => {
     const { userId, face, text } = req.body;
   
@@ -384,7 +362,80 @@ app.post("/api/update-criteria", async (req, res) => {
     }
   });
   
-  
+
+  app.post('/api/avfiles/upload', upload.array('files', 10), (req, res) => {
+    const { user_id, face } = req.body;
+    const files = req.files;
+
+    if (!user_id || !face || !files?.length) {
+        return res.status(400).json({ error: 'Missing user_id, face, or files' });
+    }
+
+    const values = files.map(file => [
+        user_id,
+        face,
+        file.buffer,
+        file.originalname,
+        file.mimetype,
+    ]);
+
+    const query = `INSERT INTO avfiles (user_id, face, file_data, file_name, file_type) VALUES ?`;
+
+    db.query(query, [values], (err) => {
+        if (err) {
+            console.error("🔴 File upload error:", err);
+            return res.status(500).json({ error: "Upload failed" });
+        }
+
+        res.status(200).json({ message: "Files uploaded successfully" });
+    });
+});
+
+
+app.get('/api/avfiles/:userId/:face', (req, res) => {
+    const { userId, face } = req.params;
+
+    const query = `SELECT id, file_name, file_type FROM avfiles WHERE user_id = ? AND face = ?`;
+    db.query(query, [userId, face], (err, results) => {
+        if (err) {
+            console.error("🔴 Error fetching files:", err);
+            return res.status(500).json({ error: "Error fetching files" });
+        }
+        res.json(results);
+    });
+});
+
+app.get('/api/avfiles/download/:fileId', (req, res) => {
+    const { fileId } = req.params;
+
+    const query = `SELECT file_data, file_name, file_type FROM avfiles WHERE id = ?`;
+    db.query(query, [fileId], (err, results) => {
+        if (err || !results.length) {
+            console.error("🔴 Download error:", err || "File not found");
+            return res.status(404).json({ error: "File not found" });
+        }
+
+        const { file_data, file_name, file_type } = results[0];
+        res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(file_name)}"`);
+        res.setHeader("Content-Type", file_type);
+        res.send(Buffer.from(file_data));
+    });
+});
+
+
+app.delete('/api/avfiles/delete/:fileId', (req, res) => {
+    const { fileId } = req.params;
+
+    const query = `DELETE FROM avfiles WHERE id = ?`;
+    db.query(query, [fileId], (err) => {
+        if (err) {
+            console.error("🔴 Delete error:", err);
+            return res.status(500).json({ error: "Delete failed" });
+        }
+        res.json({ message: "File deleted" });
+    });
+});
+
 
 // Start the server
 app.listen(4000, () => {

@@ -74,52 +74,40 @@ const fetchSavedData = async (userId) => {
           5: data.how_text || "",
       });
 
+      const newFaceFiles = {};
+
       // Fetch files separately
       for (let i = 0; i < 6; i++) {
           const face = ["who", "what", "when", "where", "why", "how"][i];
 
           try {
-              const fileResponse = await fetch(`http://localhost:4000/api/avdata/files/${userId}/${face}`);
-              
-              if (fileResponse.ok) {                
-                  const blob = await fileResponse.blob();
-                  const fileType = fileResponse.headers.get("Content-Type");
-                  const fileNameHeader = fileResponse.headers.get("Content-Disposition");
-                  let fileName = "unknown_file";
+           
+            const fileResponse = await fetch(`http://localhost:4000/api/avfiles/${userId}/${face}`);
+              if (!fileResponse.ok) throw new Error(`No files for ${face}`);
 
-                  // Extract filename correctly
-                  if (fileNameHeader) {
-                    const match = fileNameHeader.match(/filename="?([^"]+)"?/);
-                    if (match && match[1]) {
-                        fileName = decodeURIComponent(match[1].trim());
-                    } else {
-                        console.warn("⚠️ Could not extract filename from header:", fileNameHeader);
-                        fileName = "untitled_file";
-                    }
-                  }
-                  
-                  if (!fileName || fileName === "unknown_file") {
-                      console.warn(`⚠️ Extracted filename is invalid. Defaulting to "untitled_file"`);
-                      fileName = "untitled_file";
-                  }
-                
-                  const fileURL = URL.createObjectURL(blob);
+              const files = await fileResponse.json();
+              console.log(`🟢 ${face.toUpperCase()} Files:`, files);
 
-                  setFaceFiles((prev) => ({
-                      ...prev,
-                      [i]: {
-                          saved: [{ name: fileName, url: fileURL, type: fileType }],
-                          pending: [],
-                      },
-                  }));
-              }
-          } catch (fileError) {
-              console.warn(`⚠️ No file found for ${face}`);
+              newFaceFiles[i] = {
+                saved: files.map(file => ({
+                  id: file.id,
+                  name: file.file_name,
+                  type: file.file_type,
+                  url: `http://localhost:4000/api/avfiles/download/${file.id}`,
+                })),
+                pending: [],
+              };
+            } catch (err) {
+              console.warn(`⚠️ No files found or error fetching files for ${face}:`, err.message);
+              newFaceFiles[i] = { saved: [], pending: [] };
+            }
           }
-      }
-  } catch (error) {
-      console.error("🔴 Error fetching user data:", error);
-  }
+
+      // 4. Set all face files in one go
+      setFaceFiles(newFaceFiles);
+    } catch (error) {
+      console.error("🔴 Error in fetchSavedData:", error);
+    }
 };
 
 // Fetch Criteria Instructions from criteria table
@@ -361,59 +349,37 @@ useEffect(() => {
         return;
     }
 
-    const faceColumn = ["who_text", "what_text", "when_text", "where_text", "why_text", "how_text"][selectedFaceIndex];
-    
-    const formData = new FormData();
-    formData.append("user_id", userId);
-    formData.append("face", faceColumn);
-    formData.append("text", inputText || "");
+    const face = ["who", "what", "when", "where", "why", "how"][selectedFaceIndex];
+    const textColumn = `${face}_text`;
 
-    const selectedFiles = tempFaceFiles[selectedFaceIndex]?.pending || [];
-
-    if (selectedFiles.length > 0) {
-        formData.append("file", selectedFiles[0]); // Only upload the first file
-        console.log("🟢 Uploading file:", selectedFiles[0].name);
-    } else {
-        console.log("🔴 No file attached.");
-    }
-
-    try {
-        const response = await fetch("http://localhost:4000/api/avdata/update", {
-            method: "POST",
-            body: formData,
-        });
-
-        const data = await response.json();
-        console.log("🟢 Response from Backend:", data);
-
-        if (!response.ok) {
-            throw new Error(`🔴 Server Error: ${data.error || "Unknown error"}`);
+    // Save the text to avdata
+    await fetch("http://localhost:4000/api/avdata/update", {
+        method: "POST",
+        body: JSON.stringify({
+            user_id: userId,
+            face: textColumn,
+            text: inputText || "",
+        }),
+        headers: {
+            "Content-Type": "application/json"
         }
+    });
 
-        // Update the face text state immediately
-        setFaceTexts((prev) => ({
-            ...prev,
-            [selectedFaceIndex]: inputText || "",
-        }));
+    // Upload files to avfiles
+    const selectedFiles = tempFaceFiles[selectedFaceIndex]?.pending || [];
+    if (selectedFiles.length > 0) {
+        const formData = new FormData();
+        formData.append("user_id", userId);
+        formData.append("face", face);
+        selectedFiles.forEach(file => formData.append("files", file));
 
-        // Move pending files to saved files
-        setFaceFiles((prev) => ({
-            ...prev,
-            [selectedFaceIndex]: {
-                saved: [...(prev[selectedFaceIndex]?.saved || []), ...selectedFiles],
-                pending: [],
-            },
-        }));
-
-        // Clear temporary file state
-        setTempFaceFiles((prev) => ({
-            ...prev,
-            [selectedFaceIndex]: { saved: [], pending: [] },
-        }));
-
-    } catch (error) {
-        console.error("🔴 Error updating data:", error);
+        await fetch("http://localhost:4000/api/avfiles/upload", {
+            method: "POST",
+            body: formData
+        });
     }
+
+    fetchSavedData(userId); 
 
     // Reset UI state
     if (activeFaceIndex !== null && materials[activeFaceIndex]) {
@@ -471,90 +437,105 @@ useEffect(() => {
 
 
   // Method for handling uploading a file when user clicks "INSERT FILE" button
-  const handleFileUpload = async (event) => {
+  const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
-    
+  
     if (files.length > 0 && selectedFaceIndex !== null) {
-        const previousFiles = faceFiles[selectedFaceIndex]?.saved || [];
-        
-        // If there's a previously uploaded file, delete it before adding a new one
-        if (previousFiles.length > 0) {
-            await handleDeleteFile(selectedFaceIndex, 0, "saved");
-        }
-
-        setTempFaceFiles((prev) => ({
-            ...prev,
-            [selectedFaceIndex]: {
-                saved: prev[selectedFaceIndex]?.saved || [],
-                pending: files, // Only keep the new file in pending state
-            },
-        }));
-
-        // Update input text to only show the new file name
-        setInputText(`• ${files[0].name}`);
+      setTempFaceFiles((prev) => {
+        const currentPending = prev[selectedFaceIndex]?.pending || [];
+        const updatedPending = [...currentPending, ...files];
+  
+        return {
+          ...prev,
+          [selectedFaceIndex]: {
+            saved: prev[selectedFaceIndex]?.saved || [],
+            pending: updatedPending,
+          },
+        };
+      });
+  
+      // Add filenames as bullets
+      const newFileNames = files.map(file => `• ${file.name}`).join("\n");
+      setInputText((prevText) =>
+        prevText
+          ? `${prevText}\n${newFileNames}`
+          : newFileNames
+      );
     }
   };
-
+  
 
   // Method for deleting an uploaded file
   const handleDeleteFile = async (faceIndex, fileIndex, type) => {
     const faceLabels = ["who", "what", "when", "where", "why", "how"];
-    const face = faceLabels[faceIndex];
-
+  
     if (!userId) {
-        console.error("🔴 Error: No user ID found.");
-        return;
+      console.error("🔴 Error: No user ID found.");
+      return;
     }
-
+  
+    // Get the file being removed
+    const fileToRemove =
+      type === "saved"
+        ? faceFiles[faceIndex]?.saved[fileIndex]
+        : tempFaceFiles[faceIndex]?.pending[fileIndex];
+  
+    const fileId = fileToRemove?.id; // only saved files have an ID
+  
     try {
-        const response = await fetch("http://localhost:4000/api/avdata/delete-file", {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user_id: userId, face }),
+      // If it's a saved file, delete it from the database
+      if (type === "saved" && fileId) {
+        const response = await fetch(`http://localhost:4000/api/avfiles/delete/${fileId}`, {
+          method: "DELETE",
         });
-
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Unknown error");
-
-        console.log(`🟢 File deleted for face: ${face}`);
-
-        // Get the name of the file being deleted
-        const fileNameToRemove =
-            type === "saved"
-                ? faceFiles[faceIndex]?.saved[fileIndex]?.name
-                : tempFaceFiles[faceIndex]?.pending[fileIndex]?.name;
-
-        // Remove file from the state
-        setFaceFiles((prev) => {
-            const updatedFiles = { ...prev };
-            if (updatedFiles[faceIndex]) {
-                updatedFiles[faceIndex].saved = updatedFiles[faceIndex].saved.filter((_, i) => i !== fileIndex);
-            }
-            return updatedFiles;
-        });
-
-        setTempFaceFiles((prev) => {
-            const updatedTempFiles = { ...prev };
-            if (updatedTempFiles[faceIndex]) {
-                updatedTempFiles[faceIndex].pending = updatedTempFiles[faceIndex].pending.filter((_, i) => i !== fileIndex);
-            }
-            return updatedTempFiles;
-        });
-
-        // Remove bullet point associated with the deleted file from the text area
-        if (fileNameToRemove) {
-            setInputText((prevText) => {
-                return prevText
-                    .split("\n")
-                    .filter((line) => !line.includes(fileNameToRemove))
-                    .join("\n");
-            });
+  
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Unknown error");
         }
-
+  
+        console.log(`🟢 File with ID ${fileId} deleted from server.`);
+      }
+  
+      const fileNameToRemove = fileToRemove?.name;
+  
+      // Update local saved files state
+      setFaceFiles((prev) => {
+        const updated = { ...prev };
+        if (updated[faceIndex]) {
+          updated[faceIndex].saved = (updated[faceIndex].saved || []).filter((_, i) => {
+            return !(type === "saved" && i === fileIndex);
+          });
+        }
+        return updated;
+      });
+  
+      // Update local pending files state
+      setTempFaceFiles((prev) => {
+        const updated = { ...prev };
+        if (updated[faceIndex]) {
+          updated[faceIndex].pending = (updated[faceIndex].pending || []).filter((_, i) => {
+            return !(type === "pending" && i === fileIndex);
+          });
+        }
+        return updated;
+      });
+  
+      // Remove file name from input text
+      if (fileNameToRemove) {
+        setInputText((prevText) => {
+          return prevText
+            .split("\n")
+            .filter((line) => !line.includes(fileNameToRemove))
+            .join("\n");
+        });
+      }
+  
     } catch (error) {
-        console.error("🔴 Error deleting file:", error);
+      console.error("🔴 Error deleting file:", error);
     }
   };
+  
 
 
   // Method for formatting the text box's text & bullet points

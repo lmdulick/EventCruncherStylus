@@ -66,3 +66,13 @@
 //     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 // );
 
+// CREATE TABLE avfiles (
+//     id INT AUTO_INCREMENT PRIMARY KEY,
+//     user_id INT NOT NULL,
+//     face ENUM('who', 'what', 'when', 'where', 'why', 'how') NOT NULL,
+//     file_data LONGBLOB NOT NULL,
+//     file_name VARCHAR(255) NOT NULL,
+//     file_type VARCHAR(100) NOT NULL,
+//     upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//     FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE
+// );
