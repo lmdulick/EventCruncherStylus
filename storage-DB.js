@@ -65,3 +65,4 @@
 //     how_text TEXT,
 //     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 // );
+
