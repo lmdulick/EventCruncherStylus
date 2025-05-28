@@ -5,6 +5,10 @@ import { saveAs } from "file-saver";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import "./CubicLevel.css";
+import { useTranslation } from 'react-i18next';
+
+//<h1>{t('cubicLevel.title')}</h1>
+
 
 
 const CubicLevel = () => {

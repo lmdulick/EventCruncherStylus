@@ -9,6 +9,8 @@ import TetrahedralLevel from './levels/TetrahedralLevel';
 import CubicLevel from './levels/CubicLevel';
 import OctahedralLevel from './levels/OctahedralLevel';
 import './App.css';
+import './i18n';
+
 
 function App() {
   const [backendData, setBackendData] = useState([{}]);

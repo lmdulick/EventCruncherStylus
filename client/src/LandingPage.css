@@ -25,6 +25,7 @@ body {
   justify-content: center;
   align-items: center;
   gap: 1rem;
+  margin-top: 2rem;
 }
 
 .navigation-button {
@@ -72,4 +73,29 @@ body {
   .navigation-buttons {
     flex-direction: column;
   }
+}
+
+.language-dropdown {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 2rem 0.75rem 1rem;
+  font-size: 1.1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  position: relative;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='18' viewBox='0 0 24 24' width='18' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  transition: background-color 0.3s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.language-dropdown:hover,
+.language-dropdown:focus {
+  background-color: #0056b3;
 }

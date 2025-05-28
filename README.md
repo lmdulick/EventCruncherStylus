@@ -46,6 +46,14 @@ npm install jszip file-saver
 npm install multer
 ```
 
+```shell
+npm install i18next react-i18next i18next-http-backend
+```
+
+```shell
+npm install react-select
+```
+
 # How-To Run the Application
 ## Frontend: 'client'
 
