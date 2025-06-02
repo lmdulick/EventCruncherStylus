@@ -11,11 +11,11 @@ body {
 }
 
 .home-logo {
-    max-width: 300px; /* Set maximum width */
-    width: 100%; /* Make it responsive */
-    height: auto; /* Maintain aspect ratio */
+    max-width: 300px;
+    width: 100%;
+    height: auto;
     display: block;
-    margin: 0 auto; /* Center horizontally */
+    margin: 0 auto;
   }
   
 
@@ -44,7 +44,6 @@ body {
   background-color: #ff5a00;
 }
 
-/* Utility classes for the footer and other elements */
 .text-light {
   color: #ffffff;
 }
@@ -77,7 +76,7 @@ body {
 
 .language-dropdown {
   background-color: #007bff;
-  color: white;
+  color: white; 
   border: none;
   padding: 0.5rem 2rem 0.75rem 1rem;
   font-size: 1.1rem;
@@ -98,4 +97,34 @@ body {
 .language-dropdown:hover,
 .language-dropdown:focus {
   background-color: #0056b3;
+}
+
+
+.language-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.language-label {
+  font-size: 1rem;
+  color: black;
+}
+
+.language-select {
+  font-family: inherit;
+}
+
+.language-wrapper {
+  position: absolute;
+  top: 75vh;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
 }

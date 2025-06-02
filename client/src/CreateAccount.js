@@ -1,20 +1,23 @@
+/* NOTE: make error messages change language */
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import logo from './ECS_logo.png'; 
-import './CreateAccount.css'; 
+import './CreateAccount.css';
+import { useTranslation } from 'react-i18next';
+import Select from 'react-select';
+import i18n from './i18n';
 
 
 function CreateAccount() {
-  //const [firstName, setFirstName] = useState('');
-  //const [lastName, setLastName] = useState('');
-  //const [email, setEmail] = useState('');
+  const { t } = useTranslation();
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  //const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [usernameError, setUsernameError] = useState('');
 
@@ -26,9 +29,6 @@ function CreateAccount() {
 
     // Only set state values if data.user is defined
     if (data.user) {
-      //setFirstName(data.user);
-      //setLastName(data.user);
-      //setEmail(data.user);
       setUsername(data.user);
       setPassword(data.user);
     }
@@ -40,10 +40,6 @@ function CreateAccount() {
     }
   };
 
-  // const validateEmail = (email) => {
-  //   return email.endsWith("@ufl.edu");
-  // };
-
   const validatePassword = (password) => {
     const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     return regex.test(password);
@@ -54,16 +50,9 @@ function CreateAccount() {
     console.log("Submit button clicked.");
 
     // Reset the error states each time the form is submitted
-    //setEmailError('');
     setUsernameError('');
     setPasswordError('');
 
-    // Check if the email ends with "@ufl.edu"
-    // if (!validateEmail(email)) {
-    //   setEmailError('Email must end with "@ufl.edu"');
-    //   return; // Stop form submission if the email is invalid
-    // }
-  
     if (password !== confirmPassword) {
       setPasswordError('Passwords do not match');
       return; // Stop form submission if passwords don't match
@@ -81,7 +70,6 @@ function CreateAccount() {
           headers: {
               'Content-Type': 'application/json'
           },
-          // body: JSON.stringify({ firstName, lastName, email, username, password })
           body: JSON.stringify({ username, password })
       });
 
@@ -111,38 +99,13 @@ function CreateAccount() {
     <div className="container">
       <img src={logo} alt="ECS Logo" className="logo" />
       <div className="form-wrapper">
-        <h2>Create Your Account</h2>
-        <Link to="/" className="homepage-link">Back</Link>
+        <h2>{t("create_account_msg")}</h2>
+        <Link to="/" className="homepage-link">{t("back_t")}</Link>
         <form id="accountForm" onSubmit={handleSubmit}>
-          {/* <input
-            type="text"
-            id="firstname"
-            placeholder="First Name"
-            required
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-          />
-          <input
-            type="text"
-            id="lastname"
-            placeholder="Last Name"
-            required
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-          />
-          <input
-            type="email"
-            id="email"
-            placeholder="Email (must end with @ufl.edu)"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          {emailError && <div className="error-message">{emailError}</div>} */}
           <input
             type="text"
             id="username"
-            placeholder="Username"
+            placeholder={t("username_label")}
             required
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -152,7 +115,7 @@ function CreateAccount() {
           <input
             type="password"
             id="password"
-            placeholder="Password"
+            placeholder={t("password_label")}
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -160,13 +123,13 @@ function CreateAccount() {
           <input
             type="password"
             id="confirmPassword"
-            placeholder="Confirm Password"
+            placeholder={t("confirm_password_label")}
             required
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
           />
           {passwordError && <div className="error-message">{passwordError}</div>}
-          <button type="submit" className="btn">Create Account</button>
+          <button type="submit" className="btn">{t("create_account_msg")}</button>
         </form>
       </div>
     </div>

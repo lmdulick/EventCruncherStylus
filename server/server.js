@@ -51,8 +51,8 @@ app.post('/api/users', async (req, res) => {
                 return res.status(500).json({ error: 'Database error' });
             }
 
+            // Username already exists
             if (results[0].count > 0) {
-                // Username already exists
                 return res.status(400).json({ error: 'Username already exists' });
             }
 
@@ -101,7 +101,7 @@ app.post('/api/login', (req, res) => {
         if (isMatch) {
             return res.status(200).json({ 
                 message: 'Login successful', 
-                userId: id // Include the user's ID in the response
+                userId: id
             });
         } else {
             return res.status(401).json({ error: 'Invalid username or password' });
@@ -119,7 +119,7 @@ app.post('/api/avdata/update', upload.single('file'), (req, res) => {
     const { user_id, face, text } = req.body;
     const file = req.file;
 
-    console.log("🟢 Updating Data:", { user_id, face, text, file: file ? file.originalname : "No File" });
+    console.log("Updating Data:", { user_id, face, text, file: file ? file.originalname : "No File" });
 
     if (!user_id || !face) {
         return res.status(400).json({ error: 'Missing required fields' });
@@ -135,19 +135,19 @@ app.post('/api/avdata/update', upload.single('file'), (req, res) => {
     const checkQuery = `SELECT * FROM avdata WHERE user_id = ?`;
     db.query(checkQuery, [user_id], (err, results) => {
         if (err) {
-            console.error("🔴 Database error:", err.message);
+            console.error("Database error:", err.message);
             return res.status(500).json({ error: "Database check error" });
         }
 
         if (results.length === 0) {
-            console.log(`🟠 No entry found for user ${user_id}, inserting new row.`);
+            console.log(`No entry found for user ${user_id}, inserting new row.`);
             const insertQuery = `INSERT INTO avdata (user_id) VALUES (?)`;
             db.query(insertQuery, [user_id], (insertErr) => {
                 if (insertErr) {
-                    console.error("🔴 Error inserting new user into avdata:", insertErr.message);
+                    console.error("Error inserting new user into avdata:", insertErr.message);
                     return res.status(500).json({ error: "Database insert error" });
                 }
-                console.log(`🟢 Inserted new entry for user ${user_id}`);
+                console.log(`Inserted new entry for user ${user_id}`);
                 updateAvData(user_id, textColumn, fileColumn, fileNameColumn, fileTypeColumn, text, file, res);
             });
         } else {
@@ -160,7 +160,7 @@ function updateAvData(user_id, textColumn, fileColumn, fileNameColumn, fileTypeC
     let query, values;
 
     if (file) {
-        console.log("🟢 Storing file:", file.originalname, "Size:", file.size, "Type:", file.mimetype);
+        console.log("Storing file:", file.originalname, "Size:", file.size, "Type:", file.mimetype);
 
         query = `UPDATE avdata SET ${textColumn} = ?, ${fileColumn} = ?, ${fileNameColumn} = ?, ${fileTypeColumn} = ? WHERE user_id = ?`;
         values = [text || "", file.buffer, file.originalname, file.mimetype, user_id];
@@ -171,7 +171,7 @@ function updateAvData(user_id, textColumn, fileColumn, fileNameColumn, fileTypeC
 
     db.query(query, values, (err, results) => {
         if (err) {
-            console.error("🔴 Database error:", err.message);
+            console.error("Database error:", err.message);
             return res.status(500).json({ error: "Database update error" });
         }
         res.status(200).json({ message: `Updated ${textColumn} successfully` });
@@ -185,18 +185,18 @@ app.get('/api/avdata/files/:userId/:face', (req, res) => {
     const fileNameColumn = `${face.replace('_text', '')}_file_name`;
     const fileTypeColumn = `${face.replace('_text', '')}_file_type`;
     
-    console.log(`🟢 Fetching file for user ${userId}, face ${face}`);
+    console.log(`Fetching file for user ${userId}, face ${face}`);
 
     const query = `SELECT ${fileColumn}, ${fileNameColumn}, ${fileTypeColumn} FROM avdata WHERE user_id = ?`;
 
     db.query(query, [userId], (err, results) => {
         if (err) {
-            console.error('🔴 Database error while fetching file:', err.message);
+            console.error('Database error while fetching file:', err.message);
             return res.status(500).json({ error: 'Database error while fetching file' });
         }
 
         if (results.length === 0 || !results[0][fileColumn]) {
-            console.warn(`⚠️ No file found for user ${userId}, face ${face}`);
+            console.warn(`No file found for user ${userId}, face ${face}`);
             return res.status(404).json({ error: 'File not found' });
         }
 
@@ -204,11 +204,7 @@ app.get('/api/avdata/files/:userId/:face', (req, res) => {
         let fileName = results[0][fileNameColumn] || `${face}.bin`;
         const fileType = results[0][fileTypeColumn] || "application/octet-stream";
 
-        // Fix filename extraction to avoid "unknown_file" issue
-        //fileName = fileName.replace(/[\x00-\x1F\x7F<>:"/\\|?*]/g, ''); // Remove invalid filename characters
-        //fileName = encodeURIComponent(fileName); // Ensure safe transmission in headers
-
-        console.log("🟢 Retrieved File from DB:");
+        console.log("Retrieved File from DB:");
         console.log(` - File Name: ${fileName}`);
         console.log(` - File Type: ${fileType}`);
         console.log(` - File Size: ${fileData.length} bytes`);
@@ -232,16 +228,16 @@ app.get('/api/avdata/:userId', (req, res) => {
 
     db.query(query, [userId], (err, results) => {
         if (err) {
-            console.error('🔴 Database error while fetching user data:', err.message);
+            console.error('Database error while fetching user data:', err.message);
             return res.status(500).json({ error: 'Database error' });
         }
 
         if (results.length === 0) {
-            console.error(`🔴 No data found for user ${userId}`);
+            console.error(`No data found for user ${userId}`);
             return res.status(404).json({ error: 'No data found for this user' });
         }
 
-        console.log(`🟢 User data retrieved for user ${userId}`);
+        console.log(`User data retrieved for user ${userId}`);
         res.status(200).json(results[0]);
     });
 });
@@ -262,7 +258,7 @@ app.delete('/api/avdata/delete-file', (req, res) => {
 
     db.query(query, [user_id], (err, results) => {
         if (err) {
-            console.error('🔴 Database error while deleting file:', err.message);
+            console.error('Database error while deleting file:', err.message);
             return res.status(500).json({ error: 'Database update error' });
         }
         res.status(200).json({ message: `File for ${face} deleted successfully` });
@@ -273,10 +269,10 @@ app.delete('/api/avdata/delete-file', (req, res) => {
 app.post("/api/update-criteria", async (req, res) => {
     const { userId, face, text } = req.body;
   
-    console.log("🟢 Received Update Request:", { userId, face, text });
+    console.log("Received Update Request:", { userId, face, text });
   
     if (userId !== "1") {
-      console.warn("🔴 Unauthorized Access Attempt:", userId);
+      console.warn("Unauthorized Access Attempt:", userId);
       return res.status(403).json({ error: "Unauthorized: Only admin can update criteria instructions." });
     }
   
@@ -284,7 +280,7 @@ app.post("/api/update-criteria", async (req, res) => {
       // Check if any row exists in the criteria table
       db.query("SELECT COUNT(*) AS count FROM criteria", (err, result) => {
         if (err) {
-          console.error("🔴 Error checking criteria count:", err);
+          console.error("Error checking criteria count:", err);
           return res.status(500).json({ error: "Database error while checking existing data." });
         }
   
@@ -299,13 +295,12 @@ app.post("/api/update-criteria", async (req, res) => {
   
           db.query(insertQuery, (insertErr, insertResult) => {
             if (insertErr) {
-              console.error("🔴 Error inserting default criteria row:", insertErr);
+              console.error("Error inserting default criteria row:", insertErr);
               return res.status(500).json({ error: "Database error while inserting default row." });
             }
   
-            console.log("✅ Default criteria row inserted:", insertResult);
+            console.log("Default criteria row inserted:", insertResult);
   
-            // Now update the newly created row
             updateCriteria();
           });
         } else {
@@ -319,16 +314,16 @@ app.post("/api/update-criteria", async (req, res) => {
   
         db.query(query, [text], (updateErr, updateResult) => {
           if (updateErr) {
-            console.error("🔴 Database Error:", updateErr);
+            console.error("Database Error:", updateErr);
             return res.status(500).json({ error: "Database error while updating criteria." });
           }
   
-          console.log("✅ Criteria Updated Successfully:", updateResult);
+          console.log("Criteria Updated Successfully:", updateResult);
           res.json({ message: "Criteria updated successfully!" });
         });
       }
     } catch (error) {
-      console.error("🔴 Server Error:", error);
+      console.error("Server Error:", error);
       res.status(500).json({ error: "Server error." });
     }
   });
@@ -337,12 +332,12 @@ app.post("/api/update-criteria", async (req, res) => {
     try {
       db.query("SELECT * FROM criteria LIMIT 1", (err, result) => {
         if (err) {
-          console.error("🔴 Error fetching criteria:", err);
+          console.error("Error fetching criteria:", err);
           return res.status(500).json({ error: "Database error." });
         }
   
         if (result.length === 0) {
-          console.warn("⚠️ No criteria found in database.");
+          console.warn("No criteria found in database.");
           return res.json({
             who_text: "None.",
             what_text: "None.",
@@ -353,11 +348,11 @@ app.post("/api/update-criteria", async (req, res) => {
           });
         }
   
-        console.log("🟢 Retrieved Criteria:", result[0]);
+        console.log("Retrieved Criteria:", result[0]);
         res.json(result[0]);
       });
     } catch (error) {
-      console.error("🔴 Server Error:", error);
+      console.error("Server Error:", error);
       res.status(500).json({ error: "Server error." });
     }
   });
@@ -383,7 +378,7 @@ app.post("/api/update-criteria", async (req, res) => {
 
     db.query(query, [values], (err) => {
         if (err) {
-            console.error("🔴 File upload error:", err);
+            console.error("File upload error:", err);
             return res.status(500).json({ error: "Upload failed" });
         }
 
@@ -398,7 +393,7 @@ app.get('/api/avfiles/:userId/:face', (req, res) => {
     const query = `SELECT id, file_name, file_type FROM avfiles WHERE user_id = ? AND face = ?`;
     db.query(query, [userId, face], (err, results) => {
         if (err) {
-            console.error("🔴 Error fetching files:", err);
+            console.error("Error fetching files:", err);
             return res.status(500).json({ error: "Error fetching files" });
         }
         res.json(results);
@@ -411,7 +406,7 @@ app.get('/api/avfiles/download/:fileId', (req, res) => {
     const query = `SELECT file_data, file_name, file_type FROM avfiles WHERE id = ?`;
     db.query(query, [fileId], (err, results) => {
         if (err || !results.length) {
-            console.error("🔴 Download error:", err || "File not found");
+            console.error("Download error:", err || "File not found");
             return res.status(404).json({ error: "File not found" });
         }
 
@@ -429,7 +424,7 @@ app.delete('/api/avfiles/delete/:fileId', (req, res) => {
     const query = `DELETE FROM avfiles WHERE id = ?`;
     db.query(query, [fileId], (err) => {
         if (err) {
-            console.error("🔴 Delete error:", err);
+            console.error("Delete error:", err);
             return res.status(500).json({ error: "Delete failed" });
         }
         res.json({ message: "File deleted" });

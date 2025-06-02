@@ -6,12 +6,16 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import "./CubicLevel.css";
 import { useTranslation } from 'react-i18next';
+import Select from 'react-select';
+import i18n from '../i18n';
 
 //<h1>{t('cubicLevel.title')}</h1>
 
 
 
 const CubicLevel = () => {
+  const { t } = useTranslation();
+
   const containerRef = useRef(null);
 
   // Mouse Indexing
@@ -64,10 +68,10 @@ const CubicLevel = () => {
 const fetchSavedData = async (userId) => {
   try {
       const response = await fetch(`http://localhost:4000/api/avdata/${userId}`);
-      if (!response.ok) throw new Error(`🔴 Server Error: ${response.statusText}`);
+      if (!response.ok) throw new Error(`Server Error: ${response.statusText}`);
 
       const data = await response.json();
-      console.log("🟢 Fetched Data:", data);
+      console.log("Fetched Data:", data);
 
       setFaceTexts({
           0: data.who_text || "",
@@ -90,7 +94,7 @@ const fetchSavedData = async (userId) => {
               if (!fileResponse.ok) throw new Error(`No files for ${face}`);
 
               const files = await fileResponse.json();
-              console.log(`🟢 ${face.toUpperCase()} Files:`, files);
+              console.log(`${face.toUpperCase()} Files:`, files);
 
               newFaceFiles[i] = {
                 saved: files.map(file => ({
@@ -102,7 +106,7 @@ const fetchSavedData = async (userId) => {
                 pending: [],
               };
             } catch (err) {
-              console.warn(`⚠️ No files found or error fetching files for ${face}:`, err.message);
+              console.warn(`No files found or error fetching files for ${face}:`, err.message);
               newFaceFiles[i] = { saved: [], pending: [] };
             }
           }
@@ -110,7 +114,7 @@ const fetchSavedData = async (userId) => {
       // 4. Set all face files in one go
       setFaceFiles(newFaceFiles);
     } catch (error) {
-      console.error("🔴 Error in fetchSavedData:", error);
+      console.error("Error in fetchSavedData:", error);
     }
 };
 
@@ -120,24 +124,25 @@ const fetchCriteriaInstructions = async () => {
     const response = await fetch("http://localhost:4000/api/get-criteria");
     
     if (!response.ok) {
-      throw new Error(`🔴 Server Error: ${response.statusText}`);
+      throw new Error(`Server Error: ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log("🟢 Fetched Criteria Instructions:", data);
+    console.log("Fetched Criteria Instructions:", data);
 
     // Update state with the fetched data
     setCriteriaInstructions({
-      0: data.who_text || "None.",
-      1: data.what_text || "None.",
-      2: data.when_text || "None.",
-      3: data.where_text || "None.",
-      4: data.why_text || "None.",
-      5: data.how_text || "None.",
+      //0: data.who_text || "None.",
+      0: data.who_text || t('placeholder_none'),
+      1: data.what_text || t('placeholder_none'),
+      2: data.when_text || t('placeholder_none'),
+      3: data.where_text || t('placeholder_none'),
+      4: data.why_text || t('placeholder_none'),
+      5: data.how_text || t('placeholder_none'),
     });
 
   } catch (error) {
-    console.error("🔴 Error fetching criteria instructions:", error);
+    console.error("Error fetching criteria instructions:", error);
   }
 };
 
@@ -229,25 +234,29 @@ useEffect(() => {
     // Create Cube
     const geometry = new THREE.BoxGeometry(3, 3, 3);
 
-    // Assign textures to the materials array
+    const currentLang = i18n.language;
+    const image_path = currentLang === 'de' ? 'cube_images_g' : 'cube_images';
+    console.log("Image Path: ", image_path);
+
+    // Assign images to the materials array
     materials.push(
       new THREE.MeshBasicMaterial({
-          map: textureLoader.load("/images/cube_faces/whoB.jpg"),
+          map: textureLoader.load(`/images/${image_path}/whoB.jpg`),
       }),
       new THREE.MeshBasicMaterial({
-          map: textureLoader.load("/images/cube_faces/whatB.jpg"),
+          map: textureLoader.load(`/images/${image_path}/whatB.jpg`),
       }),
       new THREE.MeshBasicMaterial({
-          map: textureLoader.load("/images/cube_faces/whenB.jpg"),
+          map: textureLoader.load(`/images/${image_path}/whenB.jpg`),
       }),
       new THREE.MeshBasicMaterial({
-          map: textureLoader.load("/images/cube_faces/whereB.jpg"),
+          map: textureLoader.load(`/images/${image_path}/whereB.jpg`),
       }),
       new THREE.MeshBasicMaterial({
-          map: textureLoader.load("/images/cube_faces/whyB.jpg"),
+          map: textureLoader.load(`/images/${image_path}/whyB.jpg`),
       }),
       new THREE.MeshBasicMaterial({
-          map: textureLoader.load("/images/cube_faces/howB.jpg"),
+          map: textureLoader.load(`/images/${image_path}/howB.jpg`),
       })
     );
   
@@ -271,7 +280,9 @@ useEffect(() => {
       materials.forEach((material, index) => {
           if (index !== currentFaceIndex && labels[index]) {
               const defaultLabel = labels[index].toLowerCase();
-              material.map = textureLoader.load(`/images/cube_faces/${defaultLabel}B.jpg`);
+              const currentLang = i18n.language;
+              const image_path = currentLang === 'de' ? 'cube_images_g' : 'cube_images';
+              material.map = textureLoader.load(`/images/${image_path}/${defaultLabel}B.jpg`);
               material.needsUpdate = true;
           }
       });
@@ -296,8 +307,10 @@ useEffect(() => {
 
               // Apply the red texture to the newly selected face
               const currentLabel = labels[faceIndex].toLowerCase();
+              const currentLang = i18n.language;
+              const image_path = currentLang === 'de' ? 'cube_images_g' : 'cube_images';
               materials[faceIndex].map = textureLoader.load(
-                  `/images/cube_faces/${currentLabel}R.jpg`
+                `/images/${image_path}/${currentLabel}R.jpg`
               );
               materials[faceIndex].needsUpdate = true;
 
@@ -345,11 +358,8 @@ useEffect(() => {
 
   // Method for handling saving data when user clicks "SAVE" button
   const handleSave = async () => {
-    console.log("🟢 handleSave() called");
-    console.log("🟢 userId:", userId);
-
     if (!userId || selectedFaceIndex === null) {
-        console.error("🔴 Error: User ID or selected face is missing.");
+        console.error("Error: User ID or selected face is missing.");
         return;
     }
 
@@ -388,7 +398,7 @@ useEffect(() => {
     // Reset UI state
     if (activeFaceIndex !== null && materials[activeFaceIndex]) {
         materials[activeFaceIndex].map = textureLoader.load(
-            `/images/cube_faces/${labels[activeFaceIndex].toLowerCase()}B.jpg`
+            `/images/cube_images/${labels[activeFaceIndex].toLowerCase()}B.jpg`
         );
         materials[activeFaceIndex].needsUpdate = true;
     }
@@ -403,7 +413,7 @@ useEffect(() => {
   // Method to handle saving criteria instructions as the admin
   const handleSaveCriteria = async () => {
     if (userId !== "1") {
-      console.error("🔴 Unauthorized: Only admin (userId = 1) can save criteria.");
+      console.error("Unauthorized: Only admin (userId = 1) can save criteria.");
       return;
     }
 
@@ -411,7 +421,7 @@ useEffect(() => {
     const faceColumn = faceColumns[selectedFaceIndex]; // Get the column name based on the selected face
 
     if (!faceColumn) {
-      console.error("🔴 Invalid face index:", selectedFaceIndex);
+      console.error("Invalid face index:", selectedFaceIndex);
       return;
     }
 
@@ -429,13 +439,13 @@ useEffect(() => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(`🔴 Server Error: ${data.error || "Unknown error"}`);
+        throw new Error(`Server Error: ${data.error || "Unknown error"}`);
       }
 
-      console.log("🟢 Criteria successfully saved:", data);
+      console.log("Criteria successfully saved:", data);
       toggleCIModal(); // Close modal after saving
     } catch (error) {
-      console.error("🔴 Error saving criteria:", error);
+      console.error("Error saving criteria:", error);
     }
   };
 
@@ -474,7 +484,7 @@ useEffect(() => {
     const faceLabels = ["who", "what", "when", "where", "why", "how"];
   
     if (!userId) {
-      console.error("🔴 Error: No user ID found.");
+      console.error("Error: No user ID found.");
       return;
     }
   
@@ -498,7 +508,7 @@ useEffect(() => {
           throw new Error(errorData.error || "Unknown error");
         }
   
-        console.log(`🟢 File with ID ${fileId} deleted from server.`);
+        console.log(`File with ID ${fileId} deleted from server.`);
       }
   
       const fileNameToRemove = fileToRemove?.name;
@@ -536,7 +546,7 @@ useEffect(() => {
       }
   
     } catch (error) {
-      console.error("🔴 Error deleting file:", error);
+      console.error("Error deleting file:", error);
     }
   };
   
@@ -606,83 +616,77 @@ useEffect(() => {
   
   // Method for viewing the cube data in a spreadsheet (xslx) format
   const handleXLSXClick = () => {
-    const faceLabels = ["WHO", "WHAT", "WHEN", "WHERE", "WHY", "HOW"];
-  
+    const rawLabels = ["who", "what", "when", "where", "why", "how"];
+    const faceLabels = rawLabels.map((label) => t(`cube_faces.${label}`));
+
     // Prepare the table data
     const tableData = [
       ["", ...faceLabels], // Header row
-      ["TEXT", ...faceLabels.map((_, index) => faceTexts[index] || "")], // Text row
-      ["FILES", ...faceLabels.map((_, index) => {
+      [t("text_label"), ...rawLabels.map((_, index) => faceTexts[index] || "")],
+      [t("files_label"), ...rawLabels.map((_, index) => {
         const { saved = [] } = faceFiles[index] || {};
-        return (saved || []).map((file) => file.name).join(",\n");
-      })], // Files row
+        return saved.map((file) => file.name).join(",\n");
+      })]
     ];
-  
+
     setSpreadsheetData(tableData);
     setIsXlsxModalOpen(true);
   };
-  
+
 
   // Method for downloading the spreadsheet
   const handleDownloadClick = async () => {
-    const faceLabels = ["WHO", "WHAT", "WHEN", "WHERE", "WHY", "HOW"];
+    const rawLabels = ["who", "what", "when", "where", "why", "how"];
+    const faceLabels = rawLabels.map((label) => t(`cube_faces.${label}`));
     const zip = new JSZip();
-  
+
     // Step 1: Generate Transposed Data for the Excel File
     const spreadsheetData = [["", ...faceLabels]];
-    const textRow = ["TEXT", ...faceLabels.map((_, index) => faceTexts[index] || "")];
+    const textRow = [t("text_label"), ...rawLabels.map((_, index) => faceTexts[index] || "")];
     const filesRow = [
-      "FILES",
-      ...faceLabels.map((_, index) => {
+      t("files_label"),
+      ...rawLabels.map((_, index) => {
         const { saved = [] } = faceFiles[index] || {};
         return saved.map((file) => file.name).join(", \n");
-      }),
+      })
     ];
-  
-    // Add rows to the spreadsheet
+
     spreadsheetData.push(textRow);
     spreadsheetData.push(filesRow);
-  
-    // Create a worksheet
+
     const worksheet = XLSX.utils.aoa_to_sheet(spreadsheetData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Cube Data");
-  
-    // Generate Excel buffer
+
     const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-  
-    // Step 2: Add the Excel File to the ZIP
     zip.file("CubeData.xlsx", excelBuffer);
 
-    // Step 3: Fetch and Add Uploaded Files to the ZIP
+    // Step 2: Add Uploaded Files to ZIP
     for (let i = 0; i < 6; i++) {
       const { saved = [] } = faceFiles[i] || {};
       for (const file of saved) {
-          try {
-              console.log(`🟢 Fetching file: ${file.name}`);
-
-              // Fetch file as Blob
-              const response = await fetch(file.url);
-              if (!response.ok) throw new Error(`Failed to fetch ${file.name}`);
-
-              const blob = await response.blob();
-              zip.file(file.name, blob);  // ✅ Add Blob to ZIP
-          } catch (error) {
-              console.error(`🔴 Error fetching file ${file.name}:`, error);
-          }
+        try {
+          const response = await fetch(file.url);
+          if (!response.ok) throw new Error(`Failed to fetch ${file.name}`);
+          const blob = await response.blob();
+          zip.file(file.name, blob);
+        } catch (error) {
+          console.error(`Error fetching file ${file.name}:`, error);
+        }
       }
-  }
-  
-    // Step 4: Generate the ZIP file and trigger the download
+    }
+
+    // Step 3: Trigger ZIP Download
     zip.generateAsync({ type: "blob" }).then((content) => {
       saveAs(content, "CubeDataFolder.zip");
     });
   };
+
   
 
   return (
     <div className="cubic-level">
-      <h1 className="cubic-level-title">Cubic Level</h1>
+      <h1 className="cubic-level-title">{t('cubic_level_title')}</h1>
       <div ref={containerRef} className="cubic-level-container"></div>
 
       {/* Default Instructions Text Box */}
@@ -692,15 +696,16 @@ useEffect(() => {
           <textarea
             className="di-textbox"
             readOnly
-            value={`Welcome to the CUBIC LEVEL! \n\nHere’s how to interact with the cube:
-  • Spin the cube by clicking and dragging.
-  • Click on a face to open the corresponding text box.
-  • Use the "Insert Files" button to add files. Only ONE file can be added to a cube face.
-  • Click "Save" to store your changes.
-  • Click the "Excel" button in the bottom right corner to view 
-  the cubic data in a spreadsheet format.
-  • Click the "Download" button in the bottom right corner to 
-  download the cubic data and uploaded files.`}
+  //           value={`Welcome to the CUBIC LEVEL! \n\nHere’s how to interact with the cube:
+  // • Spin the cube by clicking and dragging.
+  // • Click on a face to open the corresponding text box.
+  // • Use the "Insert Files" button to add files. Only ONE file can be added to a cube face.
+  // • Click "Save" to store your changes.
+  // • Click the "Excel" button in the bottom right corner to view 
+  // the cubic data in a spreadsheet format.
+  // • Click the "Download" button in the bottom right corner to 
+  // download the cubic data and uploaded files.`}
+            value={t('cubic_level_instructions')}
           />
         </div>
       )}
@@ -774,14 +779,17 @@ useEffect(() => {
             ✱
           </button>
 
-          <h2 className="face-label">{labels[selectedFaceIndex]} ?</h2>
+          <h2 className="face-label">
+            {t(`cube_faces.${["who", "what", "when", "where", "why", "how"][selectedFaceIndex]}`)} ?
+          </h2>
+
           <div className="text-area-container">
             <textarea
               id="text-area"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type here..."
+              placeholder={t("placeholder_t")}
             ></textarea>
             
             <div className="file-list">
@@ -834,10 +842,10 @@ useEffect(() => {
                 style={{ display: "none" }}
                 multiple
               />
-              INSERT FILES
+              {t("insert_files_button")}
             </label>
             <button onClick={handleSave} className="save-button">
-              SAVE
+              {t("save_button")}
             </button>
           </div>
         </div>
@@ -853,22 +861,20 @@ useEffect(() => {
 
             {/* Label of Cube Face */}
             <h2 className="ci-modal-face-label">
-              Criteria Instructions: {labels[selectedFaceIndex]}
+              {t("criteria_instructions_t")} {t(`cube_faces.${["who", "what", "when", "where", "why", "how"][selectedFaceIndex]}`)}
             </h2>
 
             {/* Criteria Instructions Text Box */}
             <textarea
               className="ci-textbox"
-              // value={criteriaInstructions[selectedFaceIndex] !== "" ? criteriaInstructions[selectedFaceIndex] : (userId === "1" ? "" : "None.")}
               value={criteriaInstructions[selectedFaceIndex] || ""}
               onChange={(e) => {
                 if (userId === "1") {
-                  console.log("USERID (again): ", userId);
                   handleCIChange(selectedFaceIndex, e.target.value);
                 }
               }}
               readOnly={userId !== "1"} // Disable editing if not admin
-              placeholder={`None.`}
+              placeholder={t("placeholder_none")}
               ref={(textarea) => {
                 if (textarea) {
                   textarea.style.height = "auto";
@@ -891,7 +897,7 @@ useEffect(() => {
             {/* Show SAVE button only if the user is admin */}
             {userId === "1" && (
               <button className="ci-save-button" onClick={handleSaveCriteria}>
-                SAVE
+                {t("save_button")}
               </button>
             )}
           </div>
