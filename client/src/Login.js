@@ -58,7 +58,7 @@ function Login() {
         <img src={logo} alt="ECS Logo" className="login-logo" />
         <form onSubmit={handleLogin} className="login-form">
           <h2 className="login-title">{t("login_button")}</h2>
-          <Link to="/" className="homepage-link">{t("back_t")}</Link>
+          <Link to="/landing-page" className="homepage-link">{t("back_t")}</Link>
           <div className="login-input-group">
             <input
               type="text"

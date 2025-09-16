@@ -18,6 +18,39 @@ const CubicLevel = () => {
 
   const containerRef = useRef(null);
 
+  // Hacker Text for "Cubic Level"
+  const [hackText, setHackText] = useState("");
+  useEffect(() => {
+    const target = t("cubic_level_title");
+    const chars =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{};:,<.>/?";
+    let rafId;
+    let start = performance.now();
+    const duration = 2000; // ms to settle
+
+    const scramble = (now) => {
+      const t = Math.min(1, (now - start) / duration);
+      const revealed = Math.floor(t * target.length);
+
+      let out = "";
+      for (let i = 0; i < target.length; i++) {
+        if (i < revealed || target[i] === " ") {
+          out += target[i];
+        } else {
+          out += chars[Math.floor(Math.random() * chars.length)];
+        }
+      }
+      setHackText(out);
+
+      if (revealed < target.length) {
+        rafId = requestAnimationFrame(scramble);
+      }
+    };
+
+    rafId = requestAnimationFrame(scramble);
+    return () => cancelAnimationFrame(rafId);
+  }, []);
+
   // Mouse Indexing
   const [selectedFaceIndex, setSelectedFaceIndex] = useState(null);
   const [activeFaceIndex, setActiveFaceIndex] = useState(null);
@@ -686,7 +719,7 @@ useEffect(() => {
 
   return (
     <div className="cubic-level">
-      <h1 className="cubic-level-title">{t('cubic_level_title')}</h1>
+      <h1 className="cubic-level-title">{hackText}</h1>
       <div ref={containerRef} className="cubic-level-container"></div>
 
       {/* Default Instructions Text Box */}

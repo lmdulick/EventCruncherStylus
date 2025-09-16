@@ -100,7 +100,7 @@ function CreateAccount() {
       <img src={logo} alt="ECS Logo" className="logo" />
       <div className="form-wrapper">
         <h2>{t("create_account_msg")}</h2>
-        <Link to="/" className="homepage-link">{t("back_t")}</Link>
+        <Link to="/landing-page" className="homepage-link">{t("back_t")}</Link>
         <form id="accountForm" onSubmit={handleSubmit}>
           <input
             type="text"

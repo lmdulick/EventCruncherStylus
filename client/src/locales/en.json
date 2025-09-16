@@ -1,6 +1,6 @@
 {
-  "language_label": "Language:",
-  "landing_heading": "Welcome to ECS",
+  "language_label": "Select a Language:",
+  "landing_heading": "{ Welcome to the ECS }",
   "create_account_button": "Create Account",
   "login_button": "Login",
   "username_label": "Username",

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import logo from './ECS_logo.png';
+import logo from './ECS_logo4.png';
 import './LandingPage.css';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
@@ -23,62 +23,56 @@ const LandingPage = () => {
   return (
     <div className="home-container">
       <img src={logo} alt="ECS Logo" className="home-logo" />
+      <h1 className="ecs-title">{t('landing_heading')}</h1>
 
-      {/* Language Dropdown (placed lower on the page) */}
       <div className="language-bar">
         <span className="language-label">{t('language_label')}</span>
         <Select
-            defaultValue={currentLang}
-            onChange={handleLanguageChange}
-            options={options}
-            isSearchable={false}
-            className="language-select"
-            styles={{
+          defaultValue={currentLang}
+          onChange={handleLanguageChange}
+          options={options}
+          isSearchable={false}
+          className="language-select"
+          styles={{
             control: (base, state) => ({
-                ...base,
-                backgroundColor: '#007bff',
-                border: 'none',
-                borderRadius: '5px',
-                padding: '2px 4px',
-                minHeight: '38px',
-                width: '140px',
-                color: 'white',
-                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-                cursor: 'pointer',
-                transition: 'filter 0.2s ease-in-out',
-                filter: state.isHovered ? 'brightness(90%)' : 'brightness(100%)',
+              ...base,
+              backgroundColor: '#3AB07E',
+              border: 'none',
+              borderRadius: '6px',
+              minHeight: '38px',
+              width: '140px',
+              color: '#fff',
+              boxShadow: state.isFocused
+                ? '0 0 0 2px rgba(58,176,126,0.4)'
+                : '0 2px 4px rgba(0,0,0,0.15)',
+              cursor: 'pointer',
             }),
             singleValue: (base) => ({
-                ...base,
-                color: 'white',
-                fontWeight: 'bold',
+              ...base,
+              color: '#fff',
+              fontWeight: '600',
             }),
             option: (base, state) => ({
-                ...base,
-                backgroundColor: state.isFocused ? '#f0f0f0' : 'white',
-                color: 'black',
-                cursor: 'pointer'
+              ...base,
+              backgroundColor: state.isFocused ? '#f0f0f0' : '#fff',
+              color: '#000',
+              cursor: 'pointer',
             }),
             dropdownIndicator: (base) => ({
-                ...base,
-                color: 'white',
-                padding: '0 8px',
-                '&:hover': {
-                  color: '#f0f0f0'
-                }
+              ...base,
+              color: '#fff',
+              padding: '0 8px',
+              '&:hover': { color: '#f0f0f0' },
             }),
             menu: (base) => ({
-                ...base,
-                borderRadius: '5px',
-                marginTop: '4px'
+              ...base,
+              borderRadius: '6px',
+              marginTop: '4px',
             }),
-            indicatorSeparator: () => ({ display: 'none' })
-            }}
+            indicatorSeparator: () => ({ display: 'none' }),
+          }}
         />
-        </div>
-
-
-      {/* <h1 style={{ color: 'black', marginTop: '2rem' }}>{t('landing_heading')}</h1> */}
+      </div>
 
       <div className="navigation-buttons">
         <Link to="/login">
@@ -93,3 +87,4 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
+

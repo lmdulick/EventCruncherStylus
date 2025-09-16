@@ -9,7 +9,6 @@
 html, body {
   height: 100%;
   overflow: hidden;
-  background-color: #ffffff;
 }
 
 
@@ -31,13 +30,16 @@ html, body {
 
 .cubic-level-title {
   text-align: center;
-  font-size: 2rem;
+  font-size: clamp(32px, 7vw, 60px);
   margin: 0;
   padding: 20px 0;
   width: 100%;
   position: absolute;
   top: 0;
   left: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+  letter-spacing: 0.08em;
+  color: #0a0a0a; /* dark text to contrast white bg */
 }
 
 .face-label {
@@ -104,6 +106,7 @@ html, body {
   padding-bottom: 40px;
   box-sizing: border-box;
   resize: none;
+  background: #efefef;
 }
 
 
@@ -467,3 +470,5 @@ html, body {
   border-color: #007bff;
   background-color: #fff;
 }
+
+

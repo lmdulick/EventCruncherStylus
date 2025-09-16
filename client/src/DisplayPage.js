@@ -1,12 +1,13 @@
-// OctahedralLevel.js
 import React, { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from 'react-router-dom';
 import * as THREE from "three";
 import { EdgesGeometry, LineSegments, LineBasicMaterial } from "three";
-import "./OctahedralLevel.css";
+import "./DisplayPage.css";
 
-export default function OctahedralLevel() {
+export default function DisplayPage() {
   const mountRef = useRef(null);
   const [hackText, setHackText] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const target = "EVENT CRUNCHER STYLUS";
@@ -196,12 +197,17 @@ export default function OctahedralLevel() {
   }, []);
 
   return (
-    <div className="octahedral-level">
+    <div className="display-page">
       <div className="hack-overlay">
         <span className="hack-text">{hackText}</span>
-        <button className="start-button">START</button>
+        <button 
+            className="start-button"
+            onClick={() => navigate("/landing-page")}
+        >
+            START
+        </button>
       </div>
-      <div ref={mountRef} className="octahedral-canvas-holder" />
+      <div ref={mountRef} className="canvas-holder" />
     </div>
   );
 }

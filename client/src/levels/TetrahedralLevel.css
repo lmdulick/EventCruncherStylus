@@ -1,42 +1,14 @@
-/* OG IMPLEMENTATION OF CUBIC LEVEL --- ONLY CUBES!!! */
+/* TetrahedralLevel.css */
+.tetrahedral-level {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: #000; /* keep black for contrast */
+  overflow: hidden;
+}
 
-.cubic-level-container {
-    width: 100vw;
-    height: calc(100vh - 50px);
-    overflow: hidden;
-    margin: 0;
-    padding: 0;
-    background-color: #fafafa;
-    position: relative;
-  }
-  
-  .cubic-level-title {
-    text-align: center;
-    font-size: 48px;
-    font-weight: bold;
-    margin: 0;
-    padding: 20px 0;
-    color: #000000;
-  }
-  
-  .text-input-overlay {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    z-index: 100;
-  }
-  
-  .text-input-overlay textarea {
-    width: 300px;
-    height: 150px;
-    font-size: 16px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-  
+.tetrahedral-level > canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}

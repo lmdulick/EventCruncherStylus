@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import DisplayPage from './DisplayPage';
 import Login from './Login';
 import CreateAccount from './CreateAccount';
 import LandingPage from './LandingPage';
@@ -28,7 +29,7 @@ function App() {
         {/* Display backend data if available */}
         <div>
           {typeof backendData.users === 'undefined' ? (
-            <p>Loading...</p>
+            <p></p>
           ) : (
             backendData.users.map((user, i) => (
               <p key={i}>{user}</p>
@@ -38,7 +39,8 @@ function App() {
         
         {/* Routes */}
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<DisplayPage />} />
+          <Route path="/landing-page" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/create-account" element={<CreateAccount />} />
           <Route path="/root" element={<Root />} />
