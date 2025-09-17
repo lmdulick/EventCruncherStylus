@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import logo from './ECS_logo4.png';
 import './LandingPage.css';
@@ -20,8 +20,50 @@ const LandingPage = () => {
     i18n.changeLanguage(selectedOption.value);
   };
 
+  useEffect(() => {
+    const handleClick = (e) => {
+      const btn = e.target.closest('.menu-button');
+      const wrapper = e.target.closest('.topbar-right');
+      document.querySelectorAll('.topbar-right').forEach(el => {
+        if (el !== wrapper) el.classList.remove('open');
+      });
+      if (btn && wrapper) {
+        wrapper.classList.toggle('open');
+        btn.setAttribute('aria-expanded', wrapper.classList.contains('open'));
+      } else {
+        document.querySelectorAll('.topbar-right').forEach(el => el.classList.remove('open'));
+      }
+    };
+
+    document.addEventListener('click', handleClick);
+
+    // cleanup when component unmounts
+    return () => document.removeEventListener('click', handleClick);
+  }, []);
+
   return (
     <div className="home-container">
+      {/* TOP BAR */}
+      <header className="topbar">
+        <Link to="/" className="topbar-left" aria-label="Start Page">
+          <img src={logo} alt="ECS Logo" className="topbar-logo" />
+        </Link>
+
+        <div className="topbar-right">
+          <button className="menu-button" aria-haspopup="true" aria-expanded="false">
+            {/* simple hamburger */}
+            <span className="menu-lines" />
+          </button>
+
+          <nav className="menu-dropdown" role="menu">
+            <Link to="/" className="menu-item" role="menuitem">{t('start_page_label')}</Link>
+            <Link to="/login" className="menu-item" role="menuitem">{t('login_button')}</Link>
+            <Link to="/create-account" className="menu-item" role="menuitem">{t('create_account_button')}</Link>
+          </nav>
+        </div>
+      </header>
+
+      {/* MAIN PAGE CONTENT */}
       <img src={logo} alt="ECS Logo" className="home-logo" />
       <h1 className="ecs-title">{t('landing_heading')}</h1>
 
@@ -82,6 +124,12 @@ const LandingPage = () => {
           <button className="navigation-button">{t('create_account_button')}</button>
         </Link>
       </div>
+
+      <footer className="footer-bar">
+        <div className="footer-left">{t('footer_left')}</div>
+        <div className="footer-right">{t('footer_right')}</div>
+      </footer>
+
     </div>
   );
 };
