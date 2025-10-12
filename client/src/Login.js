@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import logo from './ECS_logo4.png';
+import logo from './ECS_logo6.png';
 import './Login.css';
 
 function Login() {
@@ -95,7 +95,7 @@ function Login() {
               role="menuitem"
               onClick={() => setMenuOpen(false)}
             >
-              Landing Page
+              {t('landing_page_label')}
             </Link>
             <Link
               to="/create-account"

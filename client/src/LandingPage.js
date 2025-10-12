@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import logo from './ECS_logo4.png';
+import logo from './ECS_logo6.png';
 import './LandingPage.css';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
@@ -11,7 +11,8 @@ const LandingPage = () => {
 
   const options = [
     { value: 'en', label: 'English' },
-    { value: 'de', label: 'Deutsch' }
+    { value: 'de', label: 'Deutsch' },
+    { value: 'zh', label: '普通话' }
   ];
 
   const currentLang = options.find(opt => opt.value === i18n.language) || options[0];

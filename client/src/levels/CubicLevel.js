@@ -5,12 +5,122 @@ import { saveAs } from "file-saver";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import "./CubicLevel.css";
-import { useTranslation } from 'react-i18next';
-import Select from 'react-select';
-import i18n from '../i18n';
+import { useTranslation } from "react-i18next";
+import i18n from "../i18n";
 
-//<h1>{t('cubicLevel.title')}</h1>
+const _texCache = new Map();
 
+function makeLabeledFace(text, opts = {}) {
+  const {
+    size = 1024,
+    bg = "#d7ffbf",
+    border = "#000000",
+    borderWidth = 18,
+    fontFamily =
+      'Noto Sans, "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", Arial, sans-serif',
+    fontWeight = "700",
+    maxFontPx = 200,
+    minFontPx = 28,
+    padding = 80,
+    textColor = "#000000",
+    lineHeight = 1.15,
+    wrap = true,
+  } = opts;
+  const safeMin = Math.min(minFontPx, maxFontPx);
+
+  const cacheKey = [
+    text,
+    size,
+    bg,
+    border,
+    borderWidth,
+    fontFamily,
+    fontWeight,
+    maxFontPx,
+    minFontPx,
+    padding,
+    textColor,
+    lineHeight,
+    wrap,
+  ].join("|");
+  if (_texCache.has(cacheKey)) return _texCache.get(cacheKey);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext("2d");
+
+  // background + border
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, size, size);
+  if (borderWidth > 0) {
+    ctx.strokeStyle = border;
+    ctx.lineWidth = borderWidth;
+    ctx.strokeRect(
+      borderWidth / 2,
+      borderWidth / 2,
+      size - borderWidth,
+      size - borderWidth
+    );
+  }
+
+  const boxW = size - padding * 2;
+  const boxH = size - padding * 2;
+
+  let fontPx = maxFontPx;
+  let lines = [];
+  const fit = () => {
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = textColor;
+    ctx.font = `${fontWeight} ${fontPx}px ${fontFamily}`;
+    if (!wrap) {
+      lines = [text];
+    } else {
+      const chars = [...text];
+      lines = [];
+      let line = "";
+      for (const ch of chars) {
+        const tryLine = line + ch;
+        if (ctx.measureText(tryLine).width <= boxW) line = tryLine;
+        else {
+          if (line) lines.push(line);
+          line = ch;
+        }
+      }
+      if (line) lines.push(line);
+    }
+    const w = Math.max(...lines.map((l) => ctx.measureText(l).width), 0);
+    const h = lines.length * fontPx * lineHeight;
+    return w <= boxW && h <= boxH;
+  };
+  while (fontPx >= minFontPx && !fit()) fontPx -= 4;
+
+  fit();
+  while (fontPx > safeMin && !fit()) fontPx -= 4;
+
+  const startY = size / 2 - ((lines.length - 1) * fontPx * lineHeight) / 2;
+  lines.forEach((l, i) => ctx.fillText(l, size / 2, startY + i * fontPx * lineHeight));
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.anisotropy = 8;
+  tex.generateMipmaps = true;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.colorSpace = THREE.SRGBColorSpace;
+
+  _texCache.set(cacheKey, tex);
+  return tex;
+}
+
+function makeFaceMaterial(label, { borderColor = "#000000", bg = "#d7ffbf" } = {}) {
+  return new THREE.MeshBasicMaterial({
+    map: makeLabeledFace(label, { border: borderColor, bg }),
+    color: 0xffffff,
+    toneMapped: false,
+    transparent: false,
+    opacity: 1
+  });
+}
 
 
 const CubicLevel = () => {
@@ -18,218 +128,150 @@ const CubicLevel = () => {
 
   const containerRef = useRef(null);
 
-  // Hacker Text for "Cubic Level"
+  // Hacker Text
   const [hackText, setHackText] = useState("");
   useEffect(() => {
     const target = t("cubic_level_title");
     const chars =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{};:,<.>/?";
     let rafId;
-    let start = performance.now();
-    const duration = 2000; // ms to settle
-
+    const start = performance.now();
+    const duration = 2000;
     const scramble = (now) => {
-      const t = Math.min(1, (now - start) / duration);
-      const revealed = Math.floor(t * target.length);
-
+      const prog = Math.min(1, (now - start) / duration);
+      const revealed = Math.floor(prog * target.length);
       let out = "";
       for (let i = 0; i < target.length; i++) {
-        if (i < revealed || target[i] === " ") {
-          out += target[i];
-        } else {
-          out += chars[Math.floor(Math.random() * chars.length)];
-        }
+        out += i < revealed || target[i] === " "
+          ? target[i]
+          : chars[Math.floor(Math.random() * chars.length)];
       }
       setHackText(out);
-
-      if (revealed < target.length) {
-        rafId = requestAnimationFrame(scramble);
-      }
+      if (revealed < target.length) rafId = requestAnimationFrame(scramble);
     };
-
     rafId = requestAnimationFrame(scramble);
     return () => cancelAnimationFrame(rafId);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t]); // re-run if language changes
 
-  // Mouse Indexing
+  // UI state
   const [selectedFaceIndex, setSelectedFaceIndex] = useState(null);
   const [activeFaceIndex, setActiveFaceIndex] = useState(null);
 
-  // Data Text Box & Files
   const [faceTexts, setFaceTexts] = useState({});
   const [inputText, setInputText] = useState("");
-  const [faceFiles, setFaceFiles] = useState({}); 
+  const [faceFiles, setFaceFiles] = useState({});
   const [tempFaceFiles, setTempFaceFiles] = useState({});
-  
-  // DI = default instructions text box
+
   const [isDITextBoxVisible, setIsDITextBoxVisible] = useState(true);
 
-  // CI modal = criteria instructions modal
   const [isCIModalOpen, setIsCIModalOpen] = useState(false);
   const [criteriaInstructions, setCriteriaInstructions] = useState({
-    0: "", // Who
-    1: "", // What
-    2: "", // When
-    3: "", // Where
-    4: "", // Why
-    5: "", // How
+    0: "", 1: "", 2: "", 3: "", 4: "", 5: "",
   });
 
-  // XLSX modal = excel spreadsheet modal
   const [isXlsxModalOpen, setIsXlsxModalOpen] = useState(false);
   const [spreadsheetData, setSpreadsheetData] = useState([]);
 
-  // Global Variables
-  const labels = ["Who", "What", "When", "Where", "Why", "How"];
-  const textureLoader = new THREE.TextureLoader();
-  const materials = [];
+  const faceTextsRef = useRef({});
+  useEffect(() => {
+    faceTextsRef.current = faceTexts;
+  }, [faceTexts]);
 
-  // Fetch userId
+  useEffect(() => {
+    if (selectedFaceIndex !== null && faceTexts[selectedFaceIndex] !== undefined) {
+      setInputText(faceTexts[selectedFaceIndex] || "");
+    }
+  }, [selectedFaceIndex, faceTexts]);
+
+  // i18n label keys (source of truth)
+  const faceKeys = ["who", "what", "when", "where", "why", "how"];
+
+  // three.js refs shared across handlers
+  const materialsRef = useRef([]);
+  const cubeRef = useRef(null);
+  const rendererRef = useRef(null);
+  const cameraRef = useRef(null);
+  const activeFaceRef = useRef(null);
+
+  // Fetch userId + data
   const [userId, setUserId] = useState(null);
   useEffect(() => {
     const storedUserId = localStorage.getItem("loggedInUserId");
     if (storedUserId) {
-        setUserId(storedUserId);
-        fetchSavedData(storedUserId);
+      setUserId(storedUserId);
+      fetchSavedData(storedUserId);
     } else {
-        console.error("User ID not found in localStorage");
+      console.error("User ID not found in localStorage");
     }
-    console.log("USERID: ", userId);
   }, []);
 
-  // Fetch saved cube data from backend
-const fetchSavedData = async (userId) => {
-  try {
+  const fetchSavedData = async (userId) => {
+    try {
       const response = await fetch(`http://localhost:4000/api/avdata/${userId}`);
       if (!response.ok) throw new Error(`Server Error: ${response.statusText}`);
-
       const data = await response.json();
-      console.log("Fetched Data:", data);
 
       setFaceTexts({
-          0: data.who_text || "",
-          1: data.what_text || "",
-          2: data.when_text || "",
-          3: data.where_text || "",
-          4: data.why_text || "",
-          5: data.how_text || "",
+        0: data.who_text || "",
+        1: data.what_text || "",
+        2: data.when_text || "",
+        3: data.where_text || "",
+        4: data.why_text || "",
+        5: data.how_text || "",
       });
 
       const newFaceFiles = {};
-
-      // Fetch files separately
       for (let i = 0; i < 6; i++) {
-          const face = ["who", "what", "when", "where", "why", "how"][i];
-
-          try {
-           
-            const fileResponse = await fetch(`http://localhost:4000/api/avfiles/${userId}/${face}`);
-              if (!fileResponse.ok) throw new Error(`No files for ${face}`);
-
-              const files = await fileResponse.json();
-              console.log(`${face.toUpperCase()} Files:`, files);
-
-              newFaceFiles[i] = {
-                saved: files.map(file => ({
-                  id: file.id,
-                  name: file.file_name,
-                  type: file.file_type,
-                  url: `http://localhost:4000/api/avfiles/download/${file.id}`,
-                })),
-                pending: [],
-              };
-            } catch (err) {
-              console.warn(`No files found or error fetching files for ${face}:`, err.message);
-              newFaceFiles[i] = { saved: [], pending: [] };
-            }
-          }
-
-      // 4. Set all face files in one go
+        const face = faceKeys[i];
+        try {
+          const fileResponse = await fetch(`http://localhost:4000/api/avfiles/${userId}/${face}`);
+          if (!fileResponse.ok) throw new Error(`No files for ${face}`);
+          const files = await fileResponse.json();
+          newFaceFiles[i] = {
+            saved: files.map((file) => ({
+              id: file.id,
+              name: file.file_name,
+              type: file.file_type,
+              url: `http://localhost:4000/api/avfiles/download/${file.id}`,
+            })),
+            pending: [],
+          };
+        } catch {
+          newFaceFiles[i] = { saved: [], pending: [] };
+        }
+      }
       setFaceFiles(newFaceFiles);
     } catch (error) {
       console.error("Error in fetchSavedData:", error);
     }
-};
+  };
 
-// Fetch Criteria Instructions from criteria table
-const fetchCriteriaInstructions = async () => {
-  try {
-    const response = await fetch("http://localhost:4000/api/get-criteria");
-    
-    if (!response.ok) {
-      throw new Error(`Server Error: ${response.statusText}`);
+  const fetchCriteriaInstructions = async () => {
+    try {
+      const response = await fetch("http://localhost:4000/api/get-criteria");
+      if (!response.ok) throw new Error(`Server Error: ${response.statusText}`);
+      const data = await response.json();
+      setCriteriaInstructions({
+        0: data.who_text || t("placeholder_none"),
+        1: data.what_text || t("placeholder_none"),
+        2: data.when_text || t("placeholder_none"),
+        3: data.where_text || t("placeholder_none"),
+        4: data.why_text || t("placeholder_none"),
+        5: data.how_text || t("placeholder_none"),
+      });
+    } catch (error) {
+      console.error("Error fetching criteria instructions:", error);
     }
-
-    const data = await response.json();
-    console.log("Fetched Criteria Instructions:", data);
-
-    // Update state with the fetched data
-    setCriteriaInstructions({
-      //0: data.who_text || "None.",
-      0: data.who_text || t('placeholder_none'),
-      1: data.what_text || t('placeholder_none'),
-      2: data.when_text || t('placeholder_none'),
-      3: data.where_text || t('placeholder_none'),
-      4: data.why_text || t('placeholder_none'),
-      5: data.how_text || t('placeholder_none'),
-    });
-
-  } catch (error) {
-    console.error("Error fetching criteria instructions:", error);
-  }
-};
-
-useEffect(() => {
-  fetchCriteriaInstructions();
-}, []);
-
-
-
-  // Toggle Default Instructions text box visibility
-  const toggleDITextBox = () => {
-    setIsDITextBoxVisible(!isDITextBoxVisible);
   };
+  useEffect(() => { fetchCriteriaInstructions(); }, []); // eslint-disable-line
 
-  // Show the Default Instructions text box when the page first renders
-  useEffect(() => {
-    setIsDITextBoxVisible(true);
-  }, []);
+  const toggleDITextBox = () => setIsDITextBoxVisible((v) => !v);
+  useEffect(() => { setIsDITextBoxVisible(true); }, []);
+  const toggleCIModal = () => setIsCIModalOpen((v) => !v);
+  const handleCIChange = (faceIndex, value) =>
+    setCriteriaInstructions((prev) => ({ ...prev, [faceIndex]: value }));
 
-  // Toggle between the Criteria Instructions Modal and the UI
-  const toggleCIModal = () => {
-    setIsCIModalOpen(!isCIModalOpen);
-  };
-
-  // Update Criteria Instructions for the selected face
-  const handleCIChange = (faceIndex, value) => {
-    setCriteriaInstructions((prev) => ({
-      ...prev,
-      [faceIndex]: value,
-    }));
-  };
-
-  // Adjust the size of the Criteria Instructions modal
-  useEffect(() => {
-    if (isCIModalOpen) {
-      const textarea = document.querySelector('.ci-textbox');
-
-      if (textarea) {
-        textarea.addEventListener('input', function () {
-          this.style.height = 'auto';
-          this.style.height = `${this.scrollHeight}px`;
-        });
-
-        return () => {
-          textarea.removeEventListener('input', function () {
-            this.style.height = 'auto';
-            this.style.height = `${this.scrollHeight}px`;
-          });
-        };
-      }
-    }
-  }, [isCIModalOpen]);
-
-  // Store temporary file uploads (before "Save" is clicked)
   useEffect(() => {
     if (selectedFaceIndex !== null) {
       setTempFaceFiles((prev) => ({
@@ -241,10 +283,8 @@ useEffect(() => {
       }));
     }
   }, [selectedFaceIndex]);
-  
-  
+
   useEffect(() => {
-    // Initialize Scene, Camera, Renderer
     const scene = new THREE.Scene();
     const container = containerRef.current;
 
@@ -254,244 +294,225 @@ useEffect(() => {
       0.1,
       1000
     );
+    camera.position.set(4, 4, 4);
+    cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.NoToneMapping; 
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setClearColor(0xffffff);
     container.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
 
-    // Ambient Light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-    scene.add(ambientLight);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 
-    // Create Cube
+    // geometry + materials (use i18n)
     const geometry = new THREE.BoxGeometry(3, 3, 3);
+    const labels = faceKeys.map((k) => t(`cube_faces.${k}`));
+    const mats = labels.map((label) => makeFaceMaterial(label, { borderColor: "#000000" }));
+    materialsRef.current = mats;
 
-    const currentLang = i18n.language;
-    const image_path = currentLang === 'de' ? 'cube_images_g' : 'cube_images';
-    console.log("Image Path: ", image_path);
-
-    // Assign images to the materials array
-    materials.push(
-      new THREE.MeshBasicMaterial({
-          map: textureLoader.load(`/images/${image_path}/whoB.jpg`),
-      }),
-      new THREE.MeshBasicMaterial({
-          map: textureLoader.load(`/images/${image_path}/whatB.jpg`),
-      }),
-      new THREE.MeshBasicMaterial({
-          map: textureLoader.load(`/images/${image_path}/whenB.jpg`),
-      }),
-      new THREE.MeshBasicMaterial({
-          map: textureLoader.load(`/images/${image_path}/whereB.jpg`),
-      }),
-      new THREE.MeshBasicMaterial({
-          map: textureLoader.load(`/images/${image_path}/whyB.jpg`),
-      }),
-      new THREE.MeshBasicMaterial({
-          map: textureLoader.load(`/images/${image_path}/howB.jpg`),
-      })
-    );
-  
-    const cube = new THREE.Mesh(geometry, materials);
+    const cube = new THREE.Mesh(geometry, mats);
     scene.add(cube);
+    cubeRef.current = cube;
 
-    // Camera and Controls
-    camera.position.set(4, 4, 4);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
-    // Raycaster for Face Selection
+    // raycaster selection
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
-
-    // Map for Cube Faces
     const faceMap = [0, 1, 2, 3, 4, 5];
 
-    // Method for resetting a face from red -> black
+    const setFaceBorder = (faceIdx, color) => {
+      const label = t(`cube_faces.${faceKeys[faceIdx]}`);
+      const mat = materialsRef.current[faceIdx];
+      const oldMap = mat.map;
+      mat.map = makeLabeledFace(label, {
+        border: color,
+        bg: "#d7ffbf",
+        maxFontPx: 200,
+        minFontPx: 28
+      });
+      mat.needsUpdate = true;
+      if (oldMap) oldMap.dispose();
+    };
+
     const resetFaceTextures = (currentFaceIndex) => {
-      materials.forEach((material, index) => {
-          if (index !== currentFaceIndex && labels[index]) {
-              const defaultLabel = labels[index].toLowerCase();
-              const currentLang = i18n.language;
-              const image_path = currentLang === 'de' ? 'cube_images_g' : 'cube_images';
-              material.map = textureLoader.load(`/images/${image_path}/${defaultLabel}B.jpg`);
-              material.needsUpdate = true;
-          }
+      materialsRef.current.forEach((_, i) => {
+        if (i !== currentFaceIndex) setFaceBorder(i, "#000000");
       });
     };
 
-    // Method for handling a mouse click on the cube
-    const handleMouseClick = (event) => {
-      const rect = renderer.domElement.getBoundingClientRect();
-      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  const handleMouseClick = (event) => {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObject(cube);
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(cube);
+    if (intersects.length > 0) {
+      const triangleIndex = Math.floor(intersects[0].faceIndex / 2);
+      const faceIndex = faceMap[triangleIndex];
 
-      if (intersects.length > 0) {
-          const triangleIndex = Math.floor(intersects[0].faceIndex / 2);
-          const faceIndex = faceMap[triangleIndex]; // Map triangle index to face index
+      if (faceIndex >= 0 && faceIndex < materialsRef.current.length) {
+        resetFaceTextures(faceIndex);
+        setFaceBorder(faceIndex, "#ff2b2b");
+        setActiveFaceIndex(faceIndex);
+        activeFaceRef.current = faceIndex;
+        setSelectedFaceIndex(faceIndex);
 
-          if (faceIndex >= 0 && faceIndex < materials.length) {
-              // Reset all other faces to their default textures
-              resetFaceTextures(faceIndex);
-
-              // Apply the red texture to the newly selected face
-              const currentLabel = labels[faceIndex].toLowerCase();
-              const currentLang = i18n.language;
-              const image_path = currentLang === 'de' ? 'cube_images_g' : 'cube_images';
-              materials[faceIndex].map = textureLoader.load(
-                `/images/${image_path}/${currentLabel}R.jpg`
-              );
-              materials[faceIndex].needsUpdate = true;
-
-              // Update state
-              setActiveFaceIndex(faceIndex);
-              setSelectedFaceIndex(faceIndex);
-              setInputText(faceTexts[faceIndex] || "");
-          } else {
-              console.error(`Invalid face index: ${faceIndex}`);
-          }
+        // Use functional state access to read latest faceTexts
+        setInputText((prev) => {
+          const texts = faceTextsRef.current;
+          return texts?.[faceIndex] || "";
+        });
       }
-    };
-    
+    }
+  };
+
     renderer.domElement.addEventListener("click", handleMouseClick);
 
+    // animate
     const animate = () => {
       requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
     };
-
     animate();
 
+    // resize
     const handleResize = () => {
       camera.aspect = container.clientWidth / container.clientHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(container.clientWidth, container.clientHeight);
     };
-
     window.addEventListener("resize", handleResize);
 
+    // respond to language change
+    const onLang = () => {
+      const currentActive = activeFaceRef.current;
+      materialsRef.current.forEach((_, i) => {
+        const border = i === currentActive ? "#ff2b2b" : "#000000";
+        setFaceBorder(i, border);
+      });
+    };
+    i18n.on("languageChanged", onLang);
+
+    // cleanup
     return () => {
+      i18n.off("languageChanged", onLang);
       renderer.domElement.removeEventListener("click", handleMouseClick);
       window.removeEventListener("resize", handleResize);
-      container.removeChild(renderer.domElement);
+      if (cube.geometry) cube.geometry.dispose();
+      materialsRef.current.forEach((m) => {
+        if (m.map) m.map.dispose();
+        m.dispose();
+      });
+      renderer.dispose();
+      if (renderer.domElement?.parentNode) {
+        renderer.domElement.parentNode.removeChild(renderer.domElement);
+      }
     };
-  }, [faceTexts]);
+    // re-run when texts used on faces change (rare)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t]); // rebuild face textures if language changes (t reference)
 
-  // Handle cube face click
+  // keep ref in sync
+  useEffect(() => {
+    activeFaceRef.current = activeFaceIndex;
+  }, [activeFaceIndex]);
+
+  // handle face click from other UI (kept for compatibility)
   const handleFaceClick = (faceIndex) => {
-      setSelectedFaceIndex(faceIndex);
-      setInputText(faceTexts[faceIndex] || ""); // Load saved text into input
+    setSelectedFaceIndex(faceIndex);
+    setInputText(faceTexts[faceIndex] || "");
   };
 
-
-  // Method for handling saving data when user clicks "SAVE" button
+  // SAVE (also reset active face border to black)
   const handleSave = async () => {
     if (!userId || selectedFaceIndex === null) {
-        console.error("Error: User ID or selected face is missing.");
-        return;
+      console.error("Error: User ID or selected face is missing.");
+      return;
     }
-
-    const face = ["who", "what", "when", "where", "why", "how"][selectedFaceIndex];
+    const face = faceKeys[selectedFaceIndex];
     const textColumn = `${face}_text`;
 
-    // Save the text to avdata
     await fetch("http://localhost:4000/api/avdata/update", {
-        method: "POST",
-        body: JSON.stringify({
-            user_id: userId,
-            face: textColumn,
-            text: inputText || "",
-        }),
-        headers: {
-            "Content-Type": "application/json"
-        }
+      method: "POST",
+      body: JSON.stringify({
+        user_id: userId,
+        face: textColumn,
+        text: inputText || "",
+      }),
+      headers: { "Content-Type": "application/json" },
     });
 
-    // Upload files to avfiles
     const selectedFiles = tempFaceFiles[selectedFaceIndex]?.pending || [];
     if (selectedFiles.length > 0) {
-        const formData = new FormData();
-        formData.append("user_id", userId);
-        formData.append("face", face);
-        selectedFiles.forEach(file => formData.append("files", file));
-
-        await fetch("http://localhost:4000/api/avfiles/upload", {
-            method: "POST",
-            body: formData
-        });
+      const formData = new FormData();
+      formData.append("user_id", userId);
+      formData.append("face", face);
+      selectedFiles.forEach((file) => formData.append("files", file));
+      await fetch("http://localhost:4000/api/avfiles/upload", {
+        method: "POST",
+        body: formData,
+      });
     }
 
-    fetchSavedData(userId); 
+    fetchSavedData(userId);
 
-    // Reset UI state
-    if (activeFaceIndex !== null && materials[activeFaceIndex]) {
-        materials[activeFaceIndex].map = textureLoader.load(
-            `/images/cube_images/${labels[activeFaceIndex].toLowerCase()}B.jpg`
-        );
-        materials[activeFaceIndex].needsUpdate = true;
+    // reset selected face to black border
+    const mat = materialsRef.current[selectedFaceIndex];
+    if (mat) {
+      const label = t(`cube_faces.${faceKeys[selectedFaceIndex]}`);
+      const oldMap = mat.map;
+      mat.map = makeLabeledFace(label, { border: "#000000", maxFontPx: 200 });
+      mat.needsUpdate = true;
+      if (oldMap) oldMap.dispose();
     }
 
     setInputText("");
     setActiveFaceIndex(null);
+    activeFaceRef.current = null;
     setSelectedFaceIndex(null);
     setIsDITextBoxVisible(true);
   };
 
-
-  // Method to handle saving criteria instructions as the admin
   const handleSaveCriteria = async () => {
     if (userId !== "1") {
       console.error("Unauthorized: Only admin (userId = 1) can save criteria.");
       return;
     }
-
     const faceColumns = ["who_text", "what_text", "when_text", "where_text", "why_text", "how_text"];
-    const faceColumn = faceColumns[selectedFaceIndex]; // Get the column name based on the selected face
-
-    if (!faceColumn) {
-      console.error("Invalid face index:", selectedFaceIndex);
-      return;
-    }
+    const faceColumn = faceColumns[selectedFaceIndex];
+    if (!faceColumn) return;
 
     try {
       const response = await fetch("http://localhost:4000/api/update-criteria", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId, // Ensure backend checks admin privilege
+          userId,
           face: faceColumn,
           text: criteriaInstructions[selectedFaceIndex] || "",
         }),
       });
-
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(`Server Error: ${data.error || "Unknown error"}`);
-      }
-
-      console.log("Criteria successfully saved:", data);
-      toggleCIModal(); // Close modal after saving
+      if (!response.ok) throw new Error(`Server Error: ${data.error || "Unknown error"}`);
+      toggleCIModal();
     } catch (error) {
       console.error("Error saving criteria:", error);
     }
   };
 
-
-  // Method for handling uploading a file when user clicks "INSERT FILE" button
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
-  
     if (files.length > 0 && selectedFaceIndex !== null) {
       setTempFaceFiles((prev) => {
         const currentPending = prev[selectedFaceIndex]?.pending || [];
         const updatedPending = [...currentPending, ...files];
-  
         return {
           ...prev,
           [selectedFaceIndex]: {
@@ -500,53 +521,33 @@ useEffect(() => {
           },
         };
       });
-  
-      // Add filenames as bullets
-      const newFileNames = files.map(file => `• ${file.name}`).join("\n");
-      setInputText((prevText) =>
-        prevText
-          ? `${prevText}\n${newFileNames}`
-          : newFileNames
-      );
+      const newFileNames = files.map((file) => `• ${file.name}`).join("\n");
+      setInputText((prevText) => (prevText ? `${prevText}\n${newFileNames}` : newFileNames));
     }
   };
-  
 
-  // Method for deleting an uploaded file
   const handleDeleteFile = async (faceIndex, fileIndex, type) => {
-    const faceLabels = ["who", "what", "when", "where", "why", "how"];
-  
     if (!userId) {
       console.error("Error: No user ID found.");
       return;
     }
-  
-    // Get the file being removed
     const fileToRemove =
       type === "saved"
         ? faceFiles[faceIndex]?.saved[fileIndex]
         : tempFaceFiles[faceIndex]?.pending[fileIndex];
-  
-    const fileId = fileToRemove?.id; // only saved files have an ID
-  
+
+    const fileId = fileToRemove?.id;
     try {
-      // If it's a saved file, delete it from the database
       if (type === "saved" && fileId) {
         const response = await fetch(`http://localhost:4000/api/avfiles/delete/${fileId}`, {
           method: "DELETE",
         });
-  
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || "Unknown error");
         }
-  
-        console.log(`File with ID ${fileId} deleted from server.`);
       }
-  
       const fileNameToRemove = fileToRemove?.name;
-  
-      // Update local saved files state
       setFaceFiles((prev) => {
         const updated = { ...prev };
         if (updated[faceIndex]) {
@@ -556,8 +557,6 @@ useEffect(() => {
         }
         return updated;
       });
-  
-      // Update local pending files state
       setTempFaceFiles((prev) => {
         const updated = { ...prev };
         if (updated[faceIndex]) {
@@ -567,38 +566,32 @@ useEffect(() => {
         }
         return updated;
       });
-  
-      // Remove file name from input text
       if (fileNameToRemove) {
-        setInputText((prevText) => {
-          return prevText
+        setInputText((prevText) =>
+          prevText
             .split("\n")
             .filter((line) => !line.includes(fileNameToRemove))
-            .join("\n");
-        });
+            .join("\n")
+        );
       }
-  
     } catch (error) {
       console.error("Error deleting file:", error);
     }
   };
-  
 
-
-  // Method for formatting the text box's text & bullet points
   const formatText = (command) => {
     const textarea = document.getElementById("text-area");
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-  
-    const textBeforeCursor = inputText.substring(0, start);
-    const textAfterCursor = inputText.substring(end);
-    const currentLine = textBeforeCursor.split("\n").pop();
-  
+
+    const textBefore = inputText.substring(0, start);
+    const textAfter = inputText.substring(end);
+    const currentLine = textBefore.split("\n").pop();
+
     const lines = inputText.split("\n");
     const lineIndex = lines.length - 1;
     let newText = inputText;
-  
+
     switch (command) {
       case "bullet":
         if (currentLine.startsWith("•")) {
@@ -611,90 +604,65 @@ useEffect(() => {
       default:
         break;
     }
-  
     setInputText(newText);
   };
- 
 
-  // Method for auto adding bullet points
   const handleKeyDown = (event) => {
     const textarea = event.target;
-  
     if (event.key === "Enter") {
       event.preventDefault();
-  
       const start = textarea.selectionStart;
-      const textBeforeCursor = inputText.substring(0, start);
-      const textAfterCursor = inputText.substring(start);
-      const currentLine = textBeforeCursor.split("\n").pop();
-  
-      let newText;
-      if (currentLine.trim().startsWith("•")) {
-        // Add a new bullet line
-        newText = `${textBeforeCursor}\n• ${textAfterCursor}`;
-      } else {
-        // Add a plain new line
-        newText = `${textBeforeCursor}\n${textAfterCursor}`;
-      }
-  
+      const textBefore = inputText.substring(0, start);
+      const textAfter = inputText.substring(start);
+      const currentLine = textBefore.split("\n").pop();
+      const newText = currentLine.trim().startsWith("•")
+        ? `${textBefore}\n• ${textAfter}`
+        : `${textBefore}\n${textAfter}`;
       setInputText(newText);
-  
-      // Adjust cursor position after '•'
       setTimeout(() => {
         textarea.selectionStart = textarea.selectionEnd = start + 3;
       }, 0);
     }
   };
 
-  
-  // Method for viewing the cube data in a spreadsheet (xslx) format
   const handleXLSXClick = () => {
-    const rawLabels = ["who", "what", "when", "where", "why", "how"];
-    const faceLabels = rawLabels.map((label) => t(`cube_faces.${label}`));
-
-    // Prepare the table data
+    const faceLabels = faceKeys.map((k) => t(`cube_faces.${k}`));
     const tableData = [
-      ["", ...faceLabels], // Header row
-      [t("text_label"), ...rawLabels.map((_, index) => faceTexts[index] || "")],
-      [t("files_label"), ...rawLabels.map((_, index) => {
-        const { saved = [] } = faceFiles[index] || {};
-        return saved.map((file) => file.name).join(",\n");
-      })]
+      ["", ...faceLabels],
+      [t("text_label"), ...faceKeys.map((_, i) => faceTexts[i] || "")],
+      [
+        t("files_label"),
+        ...faceKeys.map((_, i) => {
+          const { saved = [] } = faceFiles[i] || {};
+          return saved.map((f) => f.name).join(",\n");
+        }),
+      ],
     ];
-
     setSpreadsheetData(tableData);
     setIsXlsxModalOpen(true);
   };
 
-
-  // Method for downloading the spreadsheet
   const handleDownloadClick = async () => {
-    const rawLabels = ["who", "what", "when", "where", "why", "how"];
-    const faceLabels = rawLabels.map((label) => t(`cube_faces.${label}`));
+    const faceLabels = faceKeys.map((k) => t(`cube_faces.${k}`));
     const zip = new JSZip();
 
-    // Step 1: Generate Transposed Data for the Excel File
     const spreadsheetData = [["", ...faceLabels]];
-    const textRow = [t("text_label"), ...rawLabels.map((_, index) => faceTexts[index] || "")];
+    const textRow = [t("text_label"), ...faceKeys.map((_, i) => faceTexts[i] || "")];
     const filesRow = [
       t("files_label"),
-      ...rawLabels.map((_, index) => {
-        const { saved = [] } = faceFiles[index] || {};
+      ...faceKeys.map((_, i) => {
+        const { saved = [] } = faceFiles[i] || {};
         return saved.map((file) => file.name).join(", \n");
-      })
+      }),
     ];
-
-    spreadsheetData.push(textRow);
-    spreadsheetData.push(filesRow);
+    spreadsheetData.push(textRow, filesRow);
 
     const worksheet = XLSX.utils.aoa_to_sheet(spreadsheetData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Cube Data");
-
     const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
     zip.file("CubeData.xlsx", excelBuffer);
 
-    // Step 2: Add Uploaded Files to ZIP
     for (let i = 0; i < 6; i++) {
       const { saved = [] } = faceFiles[i] || {};
       for (const file of saved) {
@@ -708,14 +676,8 @@ useEffect(() => {
         }
       }
     }
-
-    // Step 3: Trigger ZIP Download
-    zip.generateAsync({ type: "blob" }).then((content) => {
-      saveAs(content, "CubeDataFolder.zip");
-    });
+    zip.generateAsync({ type: "blob" }).then((content) => saveAs(content, "CubeDataFolder.zip"));
   };
-
-  
 
   return (
     <div className="cubic-level">
@@ -726,36 +688,16 @@ useEffect(() => {
       {isDITextBoxVisible && (
         <div className="text-input-overlay">
           <h2 className="face-label"></h2>
-          <textarea
-            className="di-textbox"
-            readOnly
-  //           value={`Welcome to the CUBIC LEVEL! \n\nHere’s how to interact with the cube:
-  // • Spin the cube by clicking and dragging.
-  // • Click on a face to open the corresponding text box.
-  // • Use the "Insert Files" button to add files. Only ONE file can be added to a cube face.
-  // • Click "Save" to store your changes.
-  // • Click the "Excel" button in the bottom right corner to view 
-  // the cubic data in a spreadsheet format.
-  // • Click the "Download" button in the bottom right corner to 
-  // download the cubic data and uploaded files.`}
-            value={t('cubic_level_instructions')}
-          />
+          <textarea className="di-textbox" readOnly value={t("cubic_level_instructions")} />
         </div>
       )}
 
-      {/* XLSX Button*/}
-      <button
-        className="xlsx-button"
-        onClick={handleXLSXClick}
-      >
-        <img
-          src="/images/buttons/excelButton.jpg" /* may replace with xlsxButton.jpg */
-          alt="XLSX Button"
-          className="xlsx-image"
-        />
+      {/* XLSX Button */}
+      <button className="xlsx-button" onClick={handleXLSXClick}>
+        <img src="/images/buttons/excelButton.jpg" alt="XLSX Button" className="xlsx-image" />
       </button>
 
-      {/* XLSX Spreadsheet (Modal) Pop-Up */}
+      {/* XLSX Modal */}
       {isXlsxModalOpen && (
         <div className="ssh-modal-overlay">
           <div className="ssh-modal-content">
@@ -778,7 +720,10 @@ useEffect(() => {
                         key={cellIndex}
                         style={{
                           whiteSpace: "pre-wrap",
-                          ...(cellIndex === 0 && { fontWeight: "bold", backgroundColor: "#f4f4f4" }),
+                          ...(cellIndex === 0 && {
+                            fontWeight: "bold",
+                            backgroundColor: "#f4f4f4",
+                          }),
                         }}
                       >
                         {cell}
@@ -793,27 +738,20 @@ useEffect(() => {
       )}
 
       {/* Download Button */}
-      <button
-        className="download-button"
-        onClick={handleDownloadClick}
-      >
-        <img
-          src="/images/buttons/downloadButton.jpg"
-          alt="Download Button"
-          className="download-image"
-        />
+      <button className="download-button" onClick={handleDownloadClick}>
+        <img src="/images/buttons/downloadButton.jpg" alt="Download Button" className="download-image" />
       </button>
-  
+
       {/* Text Box */}
       {selectedFaceIndex !== null && (
         <div className="text-input-overlay">
-          { /* Criteria Instructions Button */}
+          {/* Criteria Instructions Button */}
           <button className="ci-button" onClick={toggleCIModal}>
             ✱
           </button>
 
           <h2 className="face-label">
-            {t(`cube_faces.${["who", "what", "when", "where", "why", "how"][selectedFaceIndex]}`)} ?
+            {t(`cube_faces.${faceKeys[selectedFaceIndex]}`)} ?
           </h2>
 
           <div className="text-area-container">
@@ -824,57 +762,45 @@ useEffect(() => {
               onKeyDown={handleKeyDown}
               placeholder={t("placeholder_t")}
             ></textarea>
-            
+
             <div className="file-list">
               {/* Saved Files */}
               {faceFiles[selectedFaceIndex]?.saved.map((file, index) => (
-                  <div key={`saved-${index}`} className="file-item">
-                      <button
-                          className="delete-file-button"
-                          onClick={() => handleDeleteFile(selectedFaceIndex, index, "saved")}
-                      >
-                          X
-                      </button>
-                      <span>{file.name}</span>
-                  </div>
+                <div key={`saved-${index}`} className="file-item">
+                  <button
+                    className="delete-file-button"
+                    onClick={() => handleDeleteFile(selectedFaceIndex, index, "saved")}
+                  >
+                    X
+                  </button>
+                  <span>{file.name}</span>
+                </div>
               ))}
 
               {/* Unsaved (Pending) Files */}
               {tempFaceFiles[selectedFaceIndex]?.pending.map((file, index) => (
-                  <div key={`pending-${index}`} className="file-item pending">
-                      <button
-                          className="delete-file-button"
-                          onClick={() => handleDeleteFile(selectedFaceIndex, index, "pending")}
-                      >
-                          X
-                      </button>
-                      <span>{file.name} (unsaved)</span>
-                  </div>
+                <div key={`pending-${index}`} className="file-item pending">
+                  <button
+                    className="delete-file-button"
+                    onClick={() => handleDeleteFile(selectedFaceIndex, index, "pending")}
+                  >
+                    X
+                  </button>
+                  <span>{file.name} (unsaved)</span>
+                </div>
               ))}
             </div>
           </div>
 
           {/* Bullet Points Button */}
-          <button
-            className="bullet-button"
-            onClick={() => formatText("bullet")}
-          >
-            <img
-              src="/images/buttons/bulletpoint.jpg"
-              alt="Bullet Point"
-              className="bullet-image"
-            />
+          <button className="bullet-button" onClick={() => formatText("bullet")}>
+            <img src="/images/buttons/bulletpoint.jpg" alt="Bullet Point" className="bullet-image" />
           </button>
 
-          {/* Upload (Insert Files) & Save Buttons */}
+          {/* Upload & Save */}
           <div className="button-container">
             <label className="upload-button">
-              <input
-                type="file"
-                onChange={handleFileUpload}
-                style={{ display: "none" }}
-                multiple
-              />
+              <input type="file" onChange={handleFileUpload} style={{ display: "none" }} multiple />
               {t("insert_files_button")}
             </label>
             <button onClick={handleSave} className="save-button">
@@ -892,21 +818,17 @@ useEffect(() => {
               X
             </button>
 
-            {/* Label of Cube Face */}
             <h2 className="ci-modal-face-label">
-              {t("criteria_instructions_t")} {t(`cube_faces.${["who", "what", "when", "where", "why", "how"][selectedFaceIndex]}`)}
+              {t("criteria_instructions_t")} {t(`cube_faces.${faceKeys[selectedFaceIndex]}`)}
             </h2>
 
-            {/* Criteria Instructions Text Box */}
             <textarea
               className="ci-textbox"
               value={criteriaInstructions[selectedFaceIndex] || ""}
               onChange={(e) => {
-                if (userId === "1") {
-                  handleCIChange(selectedFaceIndex, e.target.value);
-                }
+                if (userId === "1") handleCIChange(selectedFaceIndex, e.target.value);
               }}
-              readOnly={userId !== "1"} // Disable editing if not admin
+              readOnly={userId !== "1"}
               placeholder={t("placeholder_none")}
               ref={(textarea) => {
                 if (textarea) {
@@ -927,7 +849,6 @@ useEffect(() => {
               }}
             ></textarea>
 
-            {/* Show SAVE button only if the user is admin */}
             {userId === "1" && (
               <button className="ci-save-button" onClick={handleSaveCriteria}>
                 {t("save_button")}

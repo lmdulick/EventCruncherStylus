@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import logo from './ECS_logo4.png';
+import logo from './ECS_logo6.png';
 import './CreateAccount.css';
 
 function CreateAccount() {
@@ -106,7 +106,7 @@ function CreateAccount() {
               {t('start_page_label', { defaultValue: 'Start Page' })}
             </Link>
             <Link to="/landing-page" className="menu-item" onClick={() => setMenuOpen(false)}>
-              Landing Page
+              {t('landing_page_label')}
             </Link>
             <Link to="/login" className="menu-item" onClick={() => setMenuOpen(false)}>
               {t('login_button', { defaultValue: 'Login' })}
