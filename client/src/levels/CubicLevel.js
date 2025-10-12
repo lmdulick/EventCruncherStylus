@@ -2,6 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
+import { Link } from 'react-router-dom';
+import logo from '../ECS_logo6.png';
+import '../LandingPage.css';
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import "./CubicLevel.css";
@@ -283,6 +286,24 @@ const CubicLevel = () => {
       }));
     }
   }, [selectedFaceIndex]);
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      const btn = e.target.closest('.menu-button');
+      const wrapper = e.target.closest('.topbar-right');
+      document.querySelectorAll('.topbar-right').forEach(el => {
+        if (el !== wrapper) el.classList.remove('open');
+      });
+      if (btn && wrapper) {
+        wrapper.classList.toggle('open');
+        btn.setAttribute('aria-expanded', wrapper.classList.contains('open'));
+      } else {
+        document.querySelectorAll('.topbar-right').forEach(el => el.classList.remove('open'));
+      }
+    };
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, []);
 
   useEffect(() => {
     const scene = new THREE.Scene();
@@ -681,6 +702,23 @@ const CubicLevel = () => {
 
   return (
     <div className="cubic-level">
+      {/* TOP BAR */}
+      <header className="topbar">
+        <Link to="/" className="topbar-left" aria-label="Start Page">
+          <img src={logo} alt="ECS Logo" className="topbar-logo" />
+        </Link>
+        <div className="topbar-right">
+          <button className="menu-button" aria-haspopup="true" aria-expanded="false">
+            <span className="menu-lines" />
+          </button>
+          <nav className="menu-dropdown" role="menu">
+            <Link to="/landing-page" className="menu-item" role="menuitem">{t('landing_page_label')}</Link>
+            <Link to="/login" className="menu-item" role="menuitem">{t('login_button')}</Link>
+            <Link to="/create-account" className="menu-item" role="menuitem">{t('create_account_button')}</Link>
+          </nav>
+        </div>
+      </header>
+
       <h1 className="cubic-level-title">{hackText}</h1>
       <div ref={containerRef} className="cubic-level-container"></div>
 
@@ -857,7 +895,12 @@ const CubicLevel = () => {
           </div>
         </div>
       )}
-    </div>
+    {/* FOOTER BAR */}
+    <footer className="footer-bar">
+      <div className="footer-left">{t('footer_left')}</div>
+      <div className="footer-right">{t('footer_right')}</div>
+    </footer>
+  </div>
   );
 };
 
