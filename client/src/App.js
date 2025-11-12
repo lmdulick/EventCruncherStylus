@@ -8,7 +8,7 @@ import Root from './Root';
 import BinaryLevel from './levels/BinaryLevel';
 import TetrahedralLevel from './levels/TetrahedralLevel';
 import CubicLevel from './levels/CubicLevel';
-import OctahedralLevel from './levels/OctahedralLevel';
+import Navigator from './levels/Navigator';
 import './App.css';
 import './i18n';
 
@@ -47,7 +47,7 @@ function App() {
           <Route path="/levels/BinaryLevel" element={<BinaryLevel />} />
           <Route path="/levels/TetrahedralLevel" element={<TetrahedralLevel />} />
           <Route path="/levels/CubicLevel" element={<CubicLevel />} />
-          <Route path="/levels/OctahedralLevel" element={<OctahedralLevel />} />
+          <Route path="/levels/Navigator" element={<Navigator />} />
           {/* End Routes */}
         </Routes>
       </div>

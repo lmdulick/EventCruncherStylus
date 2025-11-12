@@ -11,8 +11,8 @@ const LandingPage = () => {
 
   const options = [
     { value: 'en', label: 'English' },
-    { value: 'de', label: 'Deutsch' },
-    { value: 'zh', label: '普通话' }
+    { value: 'de', label: 'Deutsch | German' },
+    { value: 'zh', label: '普通话 | Mandarin' }
   ];
 
   const currentLang = options.find(opt => opt.value === i18n.language) || options[0];

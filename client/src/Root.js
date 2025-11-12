@@ -9,7 +9,7 @@ const Root = () => {
     { name: 'binary_image.png', src: '/images/binary_image.png', link: '/levels/BinaryLevel' },
     { name: 'tetrahedron_image.png', src: '/images/tetrahedron_image.png', link: '/levels/TetrahedralLevel' },
     { name: 'cube_image.png', src: '/images/cube_image.png', link: '/levels/CubicLevel' },
-    { name: 'octahedron_image.png', src: '/images/octahedron_image.png', link: '/levels/OctahedralLevel' }
+    { name: 'octahedron_image.png', src: '/images/octahedron_image.png', link: '/levels/Navigator' }
   ];
 
   const handleImageClick = (imageName) => {

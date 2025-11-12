@@ -712,6 +712,7 @@ const CubicLevel = () => {
             <span className="menu-lines" />
           </button>
           <nav className="menu-dropdown" role="menu">
+            <Link to="/" className="menu-item" role="menuitem">{t('start_page_label')}</Link>
             <Link to="/landing-page" className="menu-item" role="menuitem">{t('landing_page_label')}</Link>
             <Link to="/login" className="menu-item" role="menuitem">{t('login_button')}</Link>
             <Link to="/create-account" className="menu-item" role="menuitem">{t('create_account_button')}</Link>
