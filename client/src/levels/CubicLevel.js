@@ -13,10 +13,11 @@ import i18n from "../i18n";
 
 const _texCache = new Map();
 
+
 function makeLabeledFace(text, opts = {}) {
   const {
     size = 1024,
-    bg = "#d7ffbf",
+    bg = null,                // <- add this
     border = "#000000",
     borderWidth = 18,
     fontFamily =
@@ -52,9 +53,16 @@ function makeLabeledFace(text, opts = {}) {
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext("2d");
 
-  // background + border
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, size, size);
+  // transparent base
+  ctx.clearRect(0, 0, size, size);
+
+  // fill with bg if provided
+  if (bg) {
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, size, size);
+  }
+
+  // 🔹 Border
   if (borderWidth > 0) {
     ctx.strokeStyle = border;
     ctx.lineWidth = borderWidth;
@@ -65,7 +73,6 @@ function makeLabeledFace(text, opts = {}) {
       size - borderWidth
     );
   }
-
   const boxW = size - padding * 2;
   const boxH = size - padding * 2;
 
@@ -115,13 +122,14 @@ function makeLabeledFace(text, opts = {}) {
   return tex;
 }
 
-function makeFaceMaterial(label, { borderColor = "#000000", bg = "#d7ffbf" } = {}) {
+
+function makeFaceMaterial(label, { borderColor = "#000000" } = {}) {
   return new THREE.MeshBasicMaterial({
-    map: makeLabeledFace(label, { border: borderColor, bg }),
-    color: 0xffffff,
-    toneMapped: false,
-    transparent: false,
-    opacity: 1
+    map: makeLabeledFace(label, { border: borderColor }),
+    transparent: true,   // use texture alpha
+    opacity: 1,          // keep letters fully bold
+    alphaTest: 0.01,     // discard almost-fully-transparent pixels
+    side: THREE.DoubleSide,
   });
 }
 
@@ -196,6 +204,7 @@ const CubicLevel = () => {
   const rendererRef = useRef(null);
   const cameraRef = useRef(null);
   const activeFaceRef = useRef(null);
+  const cubeHighlightLockedRef = useRef(false);
 
   // Fetch userId + data
   const [userId, setUserId] = useState(null);
@@ -341,67 +350,234 @@ const CubicLevel = () => {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
+    // --- Smooth camera tween state ---
+    let isTweening = false;
+    let tweenStart = null;
+    const tweenDuration = 1000; // ms
+
+    const startCamPos = new THREE.Vector3();
+    const endCamPos = new THREE.Vector3();
+    const startTarget = new THREE.Vector3();
+    const endTarget = new THREE.Vector3();
+
+    // --- Track user rotation + face normals ---
+    let isUserRotating = false;
+
+    // Local-space normals for each cube face: [right, left, top, bottom, front, back]
+    const faceNormals = [
+      new THREE.Vector3(1, 0, 0),
+      new THREE.Vector3(-1, 0, 0),
+      new THREE.Vector3(0, 1, 0),
+      new THREE.Vector3(0, -1, 0),
+      new THREE.Vector3(0, 0, 1),
+      new THREE.Vector3(0, 0, -1),
+    ];
+
+    const cubeCenter = new THREE.Vector3();
+    const camPos = new THREE.Vector3();
+    const tmpNormal = new THREE.Vector3();
+
+
+
+    controls.addEventListener("start", () => {
+      // User grabbed the cube → stop auto camera tween & exit focus mode
+      isTweening = false;
+      tweenStart = null;
+      isUserRotating = true;
+
+      if (cubeHighlightLockedRef.current) {
+        cubeHighlightLockedRef.current = false;
+        resetFaceTextures();  // restore all labels fully visible, only active red
+      }
+    });
+
+    // When user stops interacting, stop fading and restore face opacity
+    controls.addEventListener("end", () => {
+      isUserRotating = false;
+      // materialsRef.current.forEach((mat) => {
+      //   if (!mat) return;
+      //   mat.opacity = 1.0;
+      // });
+    });
+
+
     // raycaster selection
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     const faceMap = [0, 1, 2, 3, 4, 5];
 
-    const setFaceBorder = (faceIdx, color) => {
+    // top 3 faces = fully visible, others = slightly transparent
+    const updateFaceOpacityAroundCamera = () => {
+      const cube = cubeRef.current;
+      if (!cube || !camera || !materialsRef.current.length) return;
+
+      // Direction from cube center to camera
+      cube.getWorldPosition(cubeCenter);
+      camera.getWorldPosition(camPos);
+      const viewDir = camPos.sub(cubeCenter).normalize();
+
+      // Compute dot products (how much each face faces the camera)
+      const faceDots = faceNormals.map((localNormal, idx) => {
+        tmpNormal.copy(localNormal).applyQuaternion(cube.quaternion); // to world space
+        const dot = tmpNormal.dot(viewDir); // larger dot = more facing the camera
+        return { idx, dot };
+      });
+
+      // Sort faces by "facingness" (most facing camera first)
+      faceDots.sort((a, b) => b.dot - a.dot);
+
+      // Take top 3 faces as "direct view"
+      const visibleSet = new Set(faceDots.slice(0, 3).map((f) => f.idx));
+
+      // Apply opacity: visible faces fully opaque, others slightly transparent
+      materialsRef.current.forEach((mat, i) => {
+        if (!mat) return;
+        mat.transparent = true;
+        mat.opacity = visibleSet.has(i) ? 1.0 : 0.25; // tweak 0.25 if you want more/less fade
+      });
+    };
+
+
+
+  
+    const setFaceBorder = (faceIdx, borderColor, textColor = "#000000") => {
       const label = t(`cube_faces.${faceKeys[faceIdx]}`);
       const mat = materialsRef.current[faceIdx];
+      if (!mat) return;
+
       const oldMap = mat.map;
       mat.map = makeLabeledFace(label, {
-        border: color,
-        bg: "#d7ffbf",
+        border: borderColor,
+        textColor,
         maxFontPx: 200,
-        minFontPx: 28
+        minFontPx: 28,
       });
       mat.needsUpdate = true;
       if (oldMap) oldMap.dispose();
     };
 
     const resetFaceTextures = (currentFaceIndex) => {
-      materialsRef.current.forEach((_, i) => {
-        if (i !== currentFaceIndex) setFaceBorder(i, "#000000");
+      materialsRef.current.forEach((mat, i) => {
+        if (!mat) return;
+
+        // restore full opacity on every face
+        mat.transparent = true;
+        mat.opacity = 1.0;
+
+        // restore normal black border on non-active faces
+        if (i !== currentFaceIndex) {
+          setFaceBorder(i, "#000000");
+        }
       });
     };
 
-  const handleMouseClick = (event) => {
-    const rect = renderer.domElement.getBoundingClientRect();
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObject(cube);
-    if (intersects.length > 0) {
-      const triangleIndex = Math.floor(intersects[0].faceIndex / 2);
-      const faceIndex = faceMap[triangleIndex];
+    // Initialize the faces in baseline state
+    resetFaceTextures();
 
-      if (faceIndex >= 0 && faceIndex < materialsRef.current.length) {
-        resetFaceTextures(faceIndex);
-        setFaceBorder(faceIndex, "#ff2b2b");
-        setActiveFaceIndex(faceIndex);
-        activeFaceRef.current = faceIndex;
-        setSelectedFaceIndex(faceIndex);
+    const handleMouseClick = (event) => {
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-        // Use functional state access to read latest faceTexts
-        setInputText((prev) => {
-          const texts = faceTextsRef.current;
-          return texts?.[faceIndex] || "";
-        });
-      }
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObject(cube);
+
+  if (intersects.length > 0) {
+    const intersection = intersects[0];
+
+    const triangleIndex = Math.floor(intersection.faceIndex / 2);
+    const faceIndex = faceMap[triangleIndex];
+
+    if (faceIndex >= 0 && faceIndex < materialsRef.current.length) {
+      // --- 1. Enter "focus" mode ---
+      cubeHighlightLockedRef.current = true;
+
+      // --- 2. Compute camera target position in front of clicked face ---
+      const worldNormal = intersection.face.normal
+        .clone()
+        .transformDirection(cube.matrixWorld)
+        .normalize();
+
+      const cubeCenter = new THREE.Vector3();
+      cube.getWorldPosition(cubeCenter);
+
+      const distance = 8; // distance away from the face
+      const newCamPos = cubeCenter.clone().add(worldNormal.multiplyScalar(distance));
+
+      // set up tween from current camera/target to new ones
+      startCamPos.copy(camera.position);
+      endCamPos.copy(newCamPos);
+      startTarget.copy(controls.target);
+      endTarget.copy(cubeCenter);
+      isTweening = true;
+      tweenStart = null;
+
+      // --- 3. Face visuals ---
+materialsRef.current.forEach((mat, i) => {
+  if (!mat) return;
+
+  // materials always stay fully opaque so the cube is still visible
+  mat.transparent = true;
+  mat.opacity = 1.0;
+
+  if (i === faceIndex) {
+    // Focused face: strong red border, solid text
+    setFaceBorder(i, "#ff2b2b", "#000000");
+  } else {
+    // Other faces: slightly transparent border + very faint text
+    // This keeps the cube outline visible without strong black spikes
+    setFaceBorder(i, "rgba(0,0,0,0.0115)", "rgba(0,0,0,0.05)");
+  }
+});
+
+
+      // --- 4. React state wiring ---
+      setActiveFaceIndex(faceIndex);
+      activeFaceRef.current = faceIndex;
+      setSelectedFaceIndex(faceIndex);
+
+      setInputText(() => {
+        const texts = faceTextsRef.current;
+        return texts?.[faceIndex] || "";
+      });
     }
-  };
+  }
+};
 
     renderer.domElement.addEventListener("click", handleMouseClick);
 
-    // animate
-    const animate = () => {
+
+
+    const animate = (time) => {
       requestAnimationFrame(animate);
+
+      // Smooth tween toward endCamPos / endTarget if in focus mode
+      if (isTweening) {
+        if (tweenStart === null) tweenStart = time;
+        const t = Math.min(1, (time - tweenStart) / tweenDuration);
+
+        camera.position.lerpVectors(startCamPos, endCamPos, t);
+        controls.target.lerpVectors(startTarget, endTarget, t);
+
+        if (t >= 1) {
+          isTweening = false;
+          tweenStart = null;
+        }
+      }
+
+      // 🔹 Always keep less-visible faces slightly transparent
+      //     as long as we are NOT in a focused (clicked) state
+      if (!cubeHighlightLockedRef.current) {
+        updateFaceOpacityAroundCamera();
+      }
+
       controls.update();
       renderer.render(scene, camera);
     };
-    animate();
+
+    requestAnimationFrame(animate);
+
 
     // resize
     const handleResize = () => {
@@ -414,10 +590,19 @@ const CubicLevel = () => {
     // respond to language change
     const onLang = () => {
       const currentActive = activeFaceRef.current;
-      materialsRef.current.forEach((_, i) => {
-        const border = i === currentActive ? "#ff2b2b" : "#000000";
-        setFaceBorder(i, border);
-      });
+      if (cubeHighlightLockedRef.current) {
+        // 🔹 Reapply locked state: active face transparent, others opaque
+        materialsRef.current.forEach((_, i) => {
+          if (i === currentActive) {
+            setFaceBorder(i, "#ff2b2b", "#000000");
+          } else {
+            setFaceBorder(i, "#rgba(0,0,0,0.01)", "rgba(0,0,0,0.01)");
+          }
+        });
+      } else {
+        // 🔹 Baseline transparent state
+        resetFaceTextures();
+      }
     };
     i18n.on("languageChanged", onLang);
 

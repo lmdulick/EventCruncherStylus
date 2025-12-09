@@ -5,16 +5,18 @@
   box-sizing: border-box;
 }
 
-html, body {
+/* allow scrolling */
+html,
+body {
   height: 100%;
-  overflow: hidden;
+  overflow: auto;
 }
 
 :root {
   --nav-ai-blue: #0066ff;
   --nav-ai-border-width: 3px;
-  --nav-ai-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
+  --nav-ai-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
 }
 
 .nav-ai-page {
@@ -26,72 +28,116 @@ html, body {
   font-family: var(--nav-ai-font);
 }
 
-/* ===== Header ===== */
+/* ===== Header / Title ===== */
 
 .nav-ai-title {
   text-align: center;
   font-size: 32px;
-  margin: 0;
-  padding: 20px 0;
+  margin: 20px 0 8px;
   letter-spacing: 0.08em;
   color: var(--nav-ai-blue);
   font-weight: 700;
   width: 100%;
-  position: absolute;
-  top: 50px;
-  left: 0;
+  position: relative;
 }
 
 
-/* ===== Canvas ===== */
+/* ===== Chat Canvas ===== */
 
 .nav-ai-canvas {
   flex: 1;
-  padding: 24px 40px 96px 40px;
+  padding: 8px 40px 140px 40px; /* bottom padding for input bar */
   display: flex;
-  align-items: center;
+  justify-content: flex-start;
+  align-items: stretch;
+}
+
+.nav-ai-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+  flex: 1;
+}
+
+
+/* Centers the hint text vertically and horizontally when no messages exist */
+.nav-ai-hint-wrapper {
+  display: flex;
   justify-content: center;
+  align-items: center;
+  margin: auto;
+  width: 100%;
 }
 
 .nav-ai-hint {
   font-size: 18px;
   color: #7f8c8d;
   text-align: center;
-  max-width: 580px;
-  white-space: nowrap;
-}
-
-.nav-ai-status {
-  font-size: 20px;
-  color: var(--nav-ai-blue);
-  text-align: center;
-}
-
-.nav-ai-error {
-  color: #c0392b;
-  font-size: 16px;
-  text-align: center;
   max-width: 600px;
+  line-height: 1.5;
 }
 
-.nav-ai-response {
-  border: var(--nav-ai-border-width) solid var(--nav-ai-blue);
-  border-radius: 12px;
-  padding: 20px 24px;
-  max-width: 800px;
+
+/* individual messages */
+
+.nav-ai-message {
+  display: flex;
   width: 100%;
-  background: #fdfdfd;
-  box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.05);
+}
+
+.nav-ai-message-user {
+  justify-content: flex-end;
+}
+
+.nav-ai-message-assistant {
+  justify-content: flex-start;
+}
+
+.nav-ai-message-system {
+  justify-content: center;
+}
+
+.nav-ai-message-bubble {
+  max-width: 70%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 15px;
+  line-height: 1.5;
   white-space: pre-wrap;
 }
 
-.nav-ai-response h2 {
-  margin: 0 0 8px 0;
-  font-size: 20px;
-  color: var(--nav-ai-blue);
+/* user bubble (right) */
+.nav-ai-message-user .nav-ai-message-bubble {
+  background: #e6f0ff;
+  border: 1px solid var(--nav-ai-blue);
+  color: #003a99;
+  border-bottom-right-radius: 4px;
 }
 
-/* ===== Bottom bar ===== */
+/* assistant bubble (left) */
+.nav-ai-message-assistant .nav-ai-message-bubble {
+  background: #f7f7f7;
+  border: 1px solid #d0d4dc;
+  color: #202124;
+  border-bottom-left-radius: 4px;
+}
+
+/* system / error bubble (center) */
+.nav-ai-message-system .nav-ai-message-bubble {
+  background: #fff5f5;
+  border: 1px solid #e57373;
+  color: #b71c1c;
+  font-size: 14px;
+}
+
+/* loading */
+.nav-ai-message-loading {
+  font-style: italic;
+  color: #555;
+}
+
+/* ===== Bottom input bar ===== */
 
 .nav-ai-bottom-bar {
   position: fixed;
@@ -102,6 +148,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: transparent;
 }
 
 .nav-ai-icon-button {
@@ -122,7 +169,7 @@ html, body {
 
 .nav-ai-icon-button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 0 rgba(0, 102, 255, 0.3);
+  /* box-shadow: 0 2px 0 rgba(0, 102, 255, 0.3); */
 }
 
 .nav-ai-icon-button:active {
@@ -160,6 +207,8 @@ html, body {
   color: #2980b9;
 }
 
+/* file name chip above prompt */
+
 .nav-ai-file-tag-inline {
   position: absolute;
   bottom: 55px;
@@ -176,7 +225,6 @@ html, body {
   white-space: nowrap;
   box-shadow: 0 2px 4px rgba(0, 102, 255, 0.1);
 }
-
 
 /* ===== Footer ===== */
 
@@ -200,16 +248,33 @@ html, body {
   }
   .nav-ai-title {
     font-size: 24px;
+    margin-top: 72px;
   }
   .nav-ai-canvas {
-    padding: 16px 16px 96px 16px;
+    padding: 8px 16px 120px 16px;
   }
   .nav-ai-prompt-input {
     font-size: 16px;
   }
-  .nav-ai-footer {
-    flex-direction: column;
-    gap: 2px;
-    font-size: 10px;
+  .nav-ai-chat {
+    max-width: 100%;
   }
 }
+
+
+.nav-ai-chat-container {
+  width: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
+  background: #f3f3f3;
+  border-radius: 24px;
+  padding: 32px 24px;
+  min-height: 65vh;
+  max-height: 70vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 2px solid #cdcdcd;
+  display: flex;
+  flex-direction: column;
+}
+

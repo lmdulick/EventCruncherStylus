@@ -5,6 +5,9 @@ const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
 const app = express();
+const dotenv = require('dotenv');
+dotenv.config();
+const OpenAI = require('openai');
 
 app.use(cors({
     origin: 'http://localhost:3000',
@@ -429,6 +432,39 @@ app.delete('/api/avfiles/delete/:fileId', (req, res) => {
         }
         res.json({ message: "File deleted" });
     });
+});
+
+// Navigator AI chat endpoint
+app.post('/api/navigator-chat', upload.single('file'), async (req, res) => {
+  try {
+    const prompt = req.body?.prompt || '';
+
+    const navigatorClient = new OpenAI({
+      baseURL: 'https://api.ai.it.ufl.edu/v1',
+      apiKey: process.env.NAVIGATOR_TOOLKIT_API_KEY,
+    });
+
+    const completion = await navigatorClient.chat.completions.create({
+      model: 'llama-3.1-8b-instruct', // model your team is allowed to use
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are a helpful UF CS tutor. If a zip file was uploaded, assume it contains project files the student is asking about.',
+        },
+        { role: 'user', content: prompt },
+      ],
+    });
+
+    const answer =
+      completion.choices?.[0]?.message?.content || 'No response generated.';
+    res.json({ answer });
+  } catch (err) {
+    console.error('Navigator error:', err);
+    res
+      .status(500)
+      .json({ error: err.message || 'Navigator API call failed.' });
+  }
 });
 
 

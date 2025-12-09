@@ -54,6 +54,10 @@ npm install i18next react-i18next i18next-http-backend
 npm install react-select
 ```
 
+```shell
+npm install openai dotenv
+```
+
 # How-To Run the Application
 ## Frontend: 'client'
 
