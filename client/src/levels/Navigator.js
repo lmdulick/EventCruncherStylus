@@ -10,16 +10,16 @@ export default function Navigator() {
   const { t } = useTranslation();
 
   const [prompt, setPrompt] = useState("");
-  const [messages, setMessages] = useState([]); // chat history
+  const [messages, setMessages] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [uploadedFileName, setUploadedFileName] = useState("");
+  const [uploadedFiles, setUploadedFiles] = useState([]);
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const fileKey = (f) => `${f.name}__${f.size}__${f.lastModified}`;
 
   const handlePickFile = () => fileInputRef.current?.click();
 
-  // hamburger menu behavior (unchanged)
   useEffect(() => {
     const handleClick = (e) => {
       const btn = e.target.closest(".menu-button");
@@ -44,8 +44,25 @@ export default function Navigator() {
   }, []);
 
   const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    setUploadedFileName(file ? file.name : "");
+    const picked = Array.from(e.target.files || []);
+    if (picked.length === 0) return;
+
+    setUploadedFiles((prev) => {
+      const existing = new Set(prev.map(fileKey));
+      const filtered = picked.filter((f) => !existing.has(fileKey(f)));
+      return [...prev, ...filtered];
+    });
+
+    // allow selecting the same file again later if it was removed
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+
+
+  const handleRemoveFileAt = (index) => {
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   // auto-scroll to newest message
@@ -67,9 +84,7 @@ export default function Navigator() {
 
     try {
       const formData = new FormData();
-      if (fileInputRef.current?.files[0]) {
-        formData.append("file", fileInputRef.current.files[0]);
-      }
+      uploadedFiles.forEach((f) => formData.append("files", f)); // "files" key
       formData.append("prompt", prompt);
 
       const res = await fetch("http://localhost:4000/api/navigator-chat", {
@@ -90,7 +105,6 @@ export default function Navigator() {
     } catch (err) {
       console.error(err);
       setError("Something went wrong connecting to Navigator AI.");
-      // show error as a system-style message in the chat
       setMessages((prev) => [
         ...prev,
         {
@@ -152,24 +166,27 @@ export default function Navigator() {
               </div>
             )}
             
-            {messages.map((msg, idx) => {
-              const baseClass = "nav-ai-message";
-              const roleClass =
-                msg.role === "user"
-                  ? "nav-ai-message-user"
-                  : msg.role === "assistant"
-                  ? "nav-ai-message-assistant"
-                  : "nav-ai-message-system";
-
-              return (
-                <div key={idx} className={`${baseClass} ${roleClass}`}>
-                  <div className="nav-ai-message-bubble">{msg.content}</div>
+            {messages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={
+                  "nav-ai-message-row " +
+                  (msg.role === "user"
+                    ? "nav-ai-message-user"
+                    : msg.role === "assistant"
+                    ? "nav-ai-message-assistant"
+                    : "nav-ai-message-system")
+                }
+              >
+                <div className="nav-ai-message-bubble">
+                  {msg.content}
                 </div>
-              );
-            })}
+              </div>
+            ))}
+
 
             {loading && (
-              <div className="nav-ai-message nav-ai-message-assistant">
+              <div className="nav-ai-message-row nav-ai-message-assistant">
                 <div className="nav-ai-message-bubble nav-ai-message-loading">
                   Thinking…
                 </div>
@@ -186,7 +203,8 @@ export default function Navigator() {
       <form className="nav-ai-bottom-bar" onSubmit={handleSubmit}>
         <input
           type="file"
-          accept=".zip"
+          multiple
+          accept=".zip,.xlsx,.xls,.csv,.jpg,.jpeg,.png,.pdf,.txt,.doc,.docx"
           ref={fileInputRef}
           onChange={handleFileChange}
           style={{ display: "none" }}
@@ -200,20 +218,34 @@ export default function Navigator() {
           <span className="nav-ai-plus">+</span>
         </button>
 
-        {uploadedFileName && (
-          <div className="nav-ai-file-tag-inline" title={uploadedFileName}>
-            {uploadedFileName}
-          </div>
-        )}
-
         <div className="nav-ai-prompt-wrapper">
-          <input
-            type="text"
-            placeholder="Create your prompt..."
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            className="nav-ai-prompt-input"
-          />
+          <div className="nav-ai-input-area">
+            {uploadedFiles.length > 0 && (
+              <div className="nav-ai-file-chip-row">
+                {uploadedFiles.map((f, i) => (
+                  <div key={i} className="nav-ai-file-tag-inline" title={f.name}>
+                    <span className="nav-ai-file-name">{f.name}</span>
+                    <button
+                      type="button"
+                      className="nav-ai-file-remove"
+                      onClick={() => handleRemoveFileAt(i)}
+                      aria-label={`Remove ${f.name}`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <input
+              type="text"
+              placeholder="Create your prompt..."
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              className="nav-ai-prompt-input"
+            />
+          </div>
         </div>
 
         <button

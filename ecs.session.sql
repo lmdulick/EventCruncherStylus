@@ -1,4 +1,6 @@
 SELECT DATABASE();
 USE ecsdb;
-SHOW TABLES;
+SELECT * FROM profiles;
+-- SELECT * FROM avdata;
+-- SELECT * FROM avfiles;
 

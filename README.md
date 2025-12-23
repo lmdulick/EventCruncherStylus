@@ -58,6 +58,11 @@ npm install react-select
 npm install openai dotenv
 ```
 
+```shell
+cd server
+npm install adm-zip
+```
+
 # How-To Run the Application
 ## Frontend: 'client'
 

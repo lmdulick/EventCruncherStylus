@@ -875,8 +875,8 @@ materialsRef.current.forEach((mat, i) => {
         try {
           const response = await fetch(file.url);
           if (!response.ok) throw new Error(`Failed to fetch ${file.name}`);
-          const blob = await response.blob();
-          zip.file(file.name, blob);
+          const arrayBuffer = await response.arrayBuffer();
+          zip.file(file.name, arrayBuffer, { binary: true });
         } catch (error) {
           console.error(`Error fetching file ${file.name}:`, error);
         }

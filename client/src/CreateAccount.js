@@ -60,9 +60,14 @@ function CreateAccount() {
       });
 
       if (resp.ok) {
-        await resp.json();
+        const data = await resp.json();   // { message, userId }
+
+        // Save new user's ID so CubicLevel loads THEIR cube, not admin's
+        localStorage.setItem("loggedInUserId", String(data.userId));
+
         navigate('/root');
-      } else {
+      }
+      else {
         const err = await resp.json();
         if (err.error === 'Username already exists') {
           setUsernameError(
